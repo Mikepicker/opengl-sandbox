@@ -1,0 +1,1 @@
+/usr/bin/cc   -rdynamic CMakeFiles/sharing.dir/sharing.c.o CMakeFiles/sharing.dir/__/deps/glad.c.o  -o sharing ../src/libglfw3.a -lrt -lm -ldl -lX11 -lpthread -lXrandr -lXinerama -lXxf86vm -lXcursor 

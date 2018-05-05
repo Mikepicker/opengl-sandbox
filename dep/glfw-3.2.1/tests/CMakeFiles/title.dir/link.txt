@@ -1,0 +1,1 @@
+/usr/bin/cc   -rdynamic CMakeFiles/title.dir/title.c.o CMakeFiles/title.dir/__/deps/glad.c.o  -o title ../src/libglfw3.a -lrt -lm -ldl -lX11 -lpthread -lXrandr -lXinerama -lXxf86vm -lXcursor 
