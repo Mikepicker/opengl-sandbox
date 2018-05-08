@@ -19,6 +19,12 @@ static void printVector(std::vector<glm::vec3>& v)
     std::cout << "[" << v[i].x << "," << v[i].y << "," << v[i].z << "]" << std::endl;
 }
 
+static void printVertices(std::vector<Vertex>& v)
+{
+  for (int i = 0; i < v.size(); i++)
+    std::cout << "[" << v[i].TexCoords.x << "," << v[i].TexCoords.y << "]" << std::endl;
+}
+
 static void printIndices(std::vector<unsigned int>& indices)
 {
   for (int i = 0; i < indices.size(); i++)
@@ -53,13 +59,13 @@ class OBJImporter
         }
         else if (line.substr(0,3) == "vt ")
         {
-          std::istringstream s(line.substr(2));
-          glm::vec3 v; s >> v.x; s >> v.y; s >> v.z;
+          std::istringstream s(line.substr(3));
+          glm::vec2 v; s >> v.x; s >> v.y;
           temp_uvs.push_back(v);
         }
         else if (line.substr(0,3) == "vn ")
         {
-          std::istringstream s(line.substr(2));
+          std::istringstream s(line.substr(3));
           glm::vec3 v; s >> v.x; s >> v.y; s >> v.z;
           temp_normals.push_back(v);
         }
@@ -103,6 +109,10 @@ class OBJImporter
           vertex3.Position = temp_vertices[v3];
           vertex3.TexCoords = hasUV ? temp_uvs[vt3] : glm::vec3(0.0f);
           vertex3.Normal = temp_normals[vn3];
+
+          vertex1.TexCoords.y = 1 - vertex1.TexCoords.y;
+          vertex2.TexCoords.y = 1 - vertex2.TexCoords.y;
+          vertex3.TexCoords.y = 1 - vertex3.TexCoords.y;
 
           std::string k1 = std::to_string(v1) + "/" + std::to_string(vt1) + "/" + std::to_string(vn1); 
           std::string k2 = std::to_string(v2) + "/" + std::to_string(vt2) + "/" + std::to_string(vn2); 

@@ -55,7 +55,7 @@ class Mesh {
     }
 
     // render the mesh
-    void Draw(Shader shader)
+    void Draw(Shader& shader)
     {
       // draw mesh
       glBindVertexArray(VAO);
