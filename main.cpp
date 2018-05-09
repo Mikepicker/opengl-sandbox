@@ -5,23 +5,10 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "dep/glm/glm.hpp"
-#include "dep/glm/gtc/matrix_transform.hpp"
-#include "dep/glm/gtc/type_ptr.hpp"
-
-#include "dep/stb_image/stb_image.h"
-
-#include "Shader.h"
-#include "Camera.h"
-#include "Mesh.h"
-#include "OBJImporter.h"
-
 #include "StencilScene.h"
+#include "FBOScene.h"
 
 #define print(s) std::cout << s << std::endl;
-
-unsigned int loadTexture(char const* path);
-void drawWithOutline(Mesh& modelMesh, Mesh& outlineMesh, Shader& modelShader, Shader& outlineShader);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -57,7 +44,8 @@ int main()
     return -1;
   }
 
-  StencilScene scene(window, SCR_WIDTH, SCR_HEIGHT);
+  //StencilScene scene(window, SCR_WIDTH, SCR_HEIGHT);
+  FBOScene scene(window, SCR_WIDTH, SCR_HEIGHT);
    
   // render loop
   // -----------

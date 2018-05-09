@@ -23,7 +23,8 @@ class StencilScene : public Scene
       glEnable(GL_STENCIL_TEST);
 
       // build and compile our shader zprogram
-      lightingShader = new Shader("basic.vs", "basic.fs");
+      lightingShader = new Shader("custom.vs", "custom.fs");
+      outlineShader = new Shader("outline.vs", "outline.fs");
       lampShader = new Shader("lamp.vs", "lamp.fs");
 
       // set up vertex data (and buffer(s)) and configure vertex attributes
@@ -66,7 +67,7 @@ class StencilScene : public Scene
       view = camera.GetViewMatrix();
 
       // Draw model
-      drawWithOutline(*modelMesh, *outlineMesh, *lightingShader, *lampShader); 
+      drawWithOutline(*modelMesh, *outlineMesh, *lightingShader, *outlineShader); 
 
       // also draw the lamp object
       lampShader->use();
@@ -111,9 +112,12 @@ class StencilScene : public Scene
     modelShader.setMat4("model", model);
 
     // morph transformation
-    glm::mat4 morph = glm::rotate(glm::mat4(1.0f), 90.0f, glm::vec3(0, 1.0f, 0));
+    glm::mat4 morph;
+    morph = glm::translate(morph, glm::vec3(1.0f, 1.0f, 0.0f));
+    morph = glm::rotate(morph, 90.0f, glm::vec3(0, 1.0f, 0));
+    morph = glm::translate(morph, glm::vec3(-1.0f, -1.0f, 0.0f));
     modelShader.setMat4("morph", morph);
-    //lightingShader.setFloat("mixFactor", sin(glfwGetTime()));
+    //modelShader.setFloat("mixFactor", sin(glfwGetTime()));
     modelShader.setFloat("mixFactor", 0.0f);
 
     // render the model
@@ -124,7 +128,7 @@ class StencilScene : public Scene
     glStencilMask(0x00);
     glDisable(GL_DEPTH_TEST);
 
-    float scale = 1.01f;
+    float scale = 1.02f;
     model = glm::mat4();
     model = glm::translate(model, glm::vec3(0, 1-scale, 0));
     model = glm::scale(model, glm::vec3(scale));
@@ -143,6 +147,7 @@ class StencilScene : public Scene
 
   private:
     Shader* lightingShader;
+    Shader* outlineShader;
     Shader* lampShader;
     Mesh* modelMesh;
     Mesh* outlineMesh;
