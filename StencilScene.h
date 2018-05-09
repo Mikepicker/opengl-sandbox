@@ -113,12 +113,12 @@ class StencilScene : public Scene
 
     // morph transformation
     glm::mat4 morph;
-    morph = glm::translate(morph, glm::vec3(1.0f, 1.0f, 0.0f));
-    morph = glm::rotate(morph, 90.0f, glm::vec3(0, 1.0f, 0));
-    morph = glm::translate(morph, glm::vec3(-1.0f, -1.0f, 0.0f));
+    //morph = glm::translate(morph, glm::vec3(1.0f, 1.0f, 0.0f));
+    morph = glm::rotate(morph, (float)glfwGetTime(), glm::vec3(0, 1.0f, 0));
+    //morph = glm::translate(morph, glm::vec3(-1.0f, -1.0f, 0.0f));
     modelShader.setMat4("morph", morph);
     //modelShader.setFloat("mixFactor", sin(glfwGetTime()));
-    modelShader.setFloat("mixFactor", 0.0f);
+    modelShader.setFloat("mixFactor", 1.0f);
 
     // render the model
     modelMesh.Draw(modelShader);
