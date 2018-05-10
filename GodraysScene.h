@@ -5,6 +5,7 @@
 #include "Shader.h"
 #include "Mesh.h"
 #include "OBJImporter.h"
+#include "Skybox.h"
 
 #include <iostream>
 #include <vector>
@@ -17,7 +18,7 @@ class GodraysScene : public Scene
       : Scene(window, width, height)
     {
       // Light position
-      lightPos = glm::vec3(13.0f, 3.0f, 3.0f);
+      lightPos = glm::vec3(13.0f, 1.0f, 3.0f);
 
       // configure global opengl state
       glEnable(GL_DEPTH_TEST);
@@ -45,53 +46,13 @@ class GodraysScene : public Scene
       diffuseMap = loadTexture("res/textures/crate.png");
 
       // Generate and bind to FBO
-      glGenFramebuffers(1, &framebuffer);
-      glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-      // generate texture
-      glGenTextures(1, &texColorBuffer);
-      glBindTexture(GL_TEXTURE_2D, texColorBuffer);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowWidth, windowHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glBindTexture(GL_TEXTURE_2D, 0);
-
-      // attach it to currently bound framebuffer object
-      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorBuffer, 0);
-
-      // Generate and bind render buffer for depth and stencil tests
-      glGenRenderbuffers(1, &rbo);
-      glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
-      glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-      // Attach rbo to fbo
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-      // Check attachments and unbind fbo
-      if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+      generateFBORBO(framebuffer, texColorBuffer, rbo);
+      
       // Create quad VAO
-      float quadVertices[] = {
-        -1.0f, 1.0f,  0.0f, 1.0f,
-        -1.0f, -1.0f, 0.0f, 0.0f,
-        1.0f, -1.0f, 1.0f, 0.0f,
-        -1.0f, 1.0f,  0.0f, 1.0f,
-        1.0f, -1.0f, 1.0f, 0.0f,
-        1.0f, 1.0f,  1.0f, 1.0f
-      };
-      glGenVertexArrays(1, &quadVAO);
-      glGenBuffers(1, &quadVBO);
-      glBindVertexArray(quadVAO);
-      glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-      glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-      glEnableVertexAttribArray(0);
-      glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-      glEnableVertexAttribArray(1);
-      glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
+      generateQuad(quadVAO, quadVBO); 
 
+      // Generate skybox
+      skybox = new Skybox();
     }
 
     void Draw()
@@ -137,19 +98,21 @@ class GodraysScene : public Scene
       // Draw model
       DrawModel(false); 
 
+      // Draw skybox as last
+      skybox->Draw(projection, view);
+
       //----------------------THIRD PASS----------------------\\
 
-      glm::mat4 ortho = glm::ortho(0.0f, (float)windowWidth, 0.0f,(float)windowHeight, 0.1f, 100.0f);
       glm::vec4 clipLight = projection * view * glm::vec4(lightPos.x, lightPos.y, lightPos.z, 1.0);
       glm::vec3 ndcLight = clipLight / clipLight.w;
 
       godraysShader->use();
       godraysShader->setVec2("lightPositionOnScreen", glm::vec2((ndcLight.x + 1) / 2, (ndcLight.y + 1) / 2));
       godraysShader->setInt("firstPass", 0);
-      godraysShader->setFloat("exposure", 0.0034f);
-      godraysShader->setFloat("decay", 1.0f);
-      godraysShader->setFloat("density", 0.84f);
-      godraysShader->setFloat("weight", 5.65f);
+      godraysShader->setFloat("exposure", exposure);
+      godraysShader->setFloat("decay", decay);
+      godraysShader->setFloat("density", density);
+      godraysShader->setFloat("weight", weight);
       
       glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
@@ -222,17 +185,27 @@ class GodraysScene : public Scene
     Shader* modelShader;
     Shader* lampShader;
     Shader* godraysShader;
+
     Mesh* modelMesh;
     Mesh* lampMesh;
     unsigned int diffuseMap;
+
+    // Godrays settings
+    float exposure = 0.0034f;
+    float decay = 0.95f;
+    float density = 0.84f;
+    float weight = 5.65f;
 
     // Matrices
     glm::mat4 view;
     glm::mat4 projection;
     
-    // lighting
+    // Lighting
     glm::vec3 lightPos;
-    glm::vec3 skyColor = glm::vec3(0.1f, 0.3f, 0.8f);
+    glm::vec3 skyColor = glm::vec3(1.0f, 1.0f, 1.0f);
+
+    // Skybox
+    Skybox* skybox;
 
 };
 #endif
