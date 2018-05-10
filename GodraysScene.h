@@ -78,6 +78,9 @@ class GodraysScene : public Scene
 
       //----------------------FIRST PASS----------------------\\
 
+      // FBO is downsampled (+ performance)
+      glViewport(0, 0, windowWidth/4, windowHeight/4);
+
       glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
       glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -88,6 +91,8 @@ class GodraysScene : public Scene
 
       // Draw lamp
       DrawLamp();
+
+      glViewport(0, 0, windowWidth, windowHeight);
 
       //----------------------SECOND PASS----------------------\\
 
@@ -192,7 +197,7 @@ class GodraysScene : public Scene
 
     // Godrays settings
     float exposure = 0.0034f;
-    float decay = 0.95f;
+    float decay = 0.97f;
     float density = 0.84f;
     float weight = 5.65f;
 
