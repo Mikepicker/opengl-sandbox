@@ -18,7 +18,7 @@ class GodraysScene : public Scene
       : Scene(window, width, height)
     {
       // Light position
-      lightPos = glm::vec3(13.0f, 3.0f, 0.0f);
+      lightPos = glm::vec3(4.0f, 4.0f, -4.0f);
 
       // configure global opengl state
       glEnable(GL_DEPTH_TEST);
@@ -31,7 +31,8 @@ class GodraysScene : public Scene
       // set up vertex data (and buffer(s)) and configure vertex attributes
       std::vector<Mesh> meshes;
       OBJImporter importer;
-      importer.importOBJ("res/models/macarena/macarena.obj", meshes);
+      //importer.importOBJ("res/models/macarena/macarena.obj", meshes);
+      importer.importOBJ("res/models/tower/tower.obj", meshes);
       //importer.importOBJ("res/models/arena.obj", meshes);
 
       // Model mesh
@@ -40,7 +41,7 @@ class GodraysScene : public Scene
       // Lamp mesh
       meshes.clear();
       importer.importOBJ("res/models/cube.obj", meshes);
-      lampMesh = &meshes[0];
+      lampMeshes = meshes;
 
       // Generate and bind to FBO
       generateFBORBO(framebuffer, texColorBuffer, rbo);
@@ -66,10 +67,6 @@ class GodraysScene : public Scene
 
       // Draw GUI
       DrawGUI();
-
-      // Render
-      glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       // view/projection transformations
       projection = glm::perspective(glm::radians(camera.Zoom), (float)s_WindowWidth / (float)s_WindowHeight, 0.1f, 100.0f);
@@ -97,10 +94,13 @@ class GodraysScene : public Scene
 
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
       glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       // Draw model
       DrawModel(false); 
+
+      // Draw lamp
+      DrawLamp();
 
       // Draw skybox as last
       skybox->Draw(projection, view);
@@ -162,7 +162,8 @@ class GodraysScene : public Scene
       modelShader->use();
       modelShader->setMat4("projection", projection);
       modelShader->setMat4("view", view);
-      
+     
+      // Set all black for the first pass (occluders map)
       if (firstPass) {
         modelShader->setVec3("material.diffuse", glm::vec3(0.0f, 0.0f, 0.0f));
         modelShader->setVec3("material.specular", glm::vec3(0.0f, 0.0f, 0.0f));
@@ -175,14 +176,14 @@ class GodraysScene : public Scene
       } else {
         modelShader->setVec3("material.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
         modelShader->setVec3("material.specular", glm::vec3(1.0f, 1.0f, 1.0f));
-        modelShader->setFloat("material.shininess", 128.0f);
+        modelShader->setFloat("material.shininess", 32.0f);
         modelShader->setVec3("light.position", lightPos);
         modelShader->setVec3("light.ambient", 1.0f, 1.0f, 1.0f);
         modelShader->setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
-        modelShader->setVec3("light.specular", 1.0f, 1.0f, 1.0f);
+        modelShader->setVec3("light.specular", 0.5f, 0.5f, 0.5f);
       }
 
-            modelShader->setVec3("viewPos", camera.Position);
+      modelShader->setVec3("viewPos", camera.Position);
 
       glm::mat4 model;
       modelShader->setMat4("model", model);
@@ -195,7 +196,6 @@ class GodraysScene : public Scene
 
     void DrawLamp()
     {
-      // also draw the lamp object
       lampShader->use();
       lampShader->setMat4("projection", projection);
       lampShader->setMat4("view", view);
@@ -204,8 +204,9 @@ class GodraysScene : public Scene
       model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
       lampShader->setMat4("model", model);
 
-      lampMesh->Draw(*lampShader);
-
+      for (std::vector<Mesh>::iterator it = lampMeshes.begin(); it != lampMeshes.end(); it++) {
+        it->Draw(*lampShader);
+      }
     }
 
   private:
@@ -221,7 +222,7 @@ class GodraysScene : public Scene
     Shader* godraysShader;
 
     std::vector<Mesh> modelMeshes;
-    Mesh* lampMesh;
+    std::vector<Mesh> lampMeshes;
 
     // Godrays settings
     float exposure = 0.0034f;

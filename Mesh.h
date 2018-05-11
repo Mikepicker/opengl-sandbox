@@ -58,7 +58,8 @@ class Mesh {
         this->indices = indices;
         this->material = material;
 
-        if (!material.texPath.empty()) {
+        if (!material.texPath.empty())
+        {
           diffuseMap = loadTexture(material.texPath.c_str());
         }
 
@@ -70,8 +71,11 @@ class Mesh {
     void Draw(Shader& shader)
     {
       // Bind textures
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, diffuseMap);
+      if (!material.texPath.empty())
+      {
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, diffuseMap);
+      }
       
       // Draw mesh
       glBindVertexArray(VAO);
