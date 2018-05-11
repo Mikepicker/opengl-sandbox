@@ -5,8 +5,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include "StencilScene.h"
-#include "FBOScene.h"
+/*#include "StencilScene.h"
+#include "FBOScene.h"*/
 #include "GodraysScene.h"
 
 #define print(s) std::cout << s << std::endl;
@@ -33,10 +33,6 @@ int main()
   }
   glfwMakeContextCurrent(window);
 
-
-  // tell GLFW to capture our mouse
-  glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-
   // glad: load all OpenGL function pointers
   // ---------------------------------------
   if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -48,7 +44,9 @@ int main()
   //StencilScene scene(window, SCR_WIDTH, SCR_HEIGHT);
   //FBOScene scene(window, SCR_WIDTH, SCR_HEIGHT);
   GodraysScene scene(window, SCR_WIDTH, SCR_HEIGHT);
-   
+
+  std::cout << glfwGetVersionString() << std::endl;
+
   // render loop
   // -----------
   while (!glfwWindowShouldClose(window))

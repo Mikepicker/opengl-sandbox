@@ -18,32 +18,29 @@ class GodraysScene : public Scene
       : Scene(window, width, height)
     {
       // Light position
-      lightPos = glm::vec3(13.0f, 1.0f, 3.0f);
+      lightPos = glm::vec3(13.0f, 3.0f, 0.0f);
 
       // configure global opengl state
       glEnable(GL_DEPTH_TEST);
 
       // build and compile our shader zprogram
-      modelShader = new Shader("basic_no_tex.vs", "basic_no_tex.fs");
+      modelShader = new Shader("basic.vs", "basic.fs");
       lampShader = new Shader("lamp.vs", "lamp.fs");
       godraysShader = new Shader("res/shaders/godrays/godrays.vs", "res/shaders/godrays/godrays.fs");
 
       // set up vertex data (and buffer(s)) and configure vertex attributes
-      std::vector<Vertex> vertices;
-      std::vector<unsigned int> indices;
+      std::vector<Mesh> meshes;
       OBJImporter importer;
-      importer.importOBJ("res/models/arena.obj", vertices, indices);
+      importer.importOBJ("res/models/macarena/macarena.obj", meshes);
+      //importer.importOBJ("res/models/arena.obj", meshes);
 
       // Model mesh
-      modelMesh = new Mesh(vertices, indices);
+      modelMeshes = meshes;
 
       // Lamp mesh
-      std::vector<Vertex> lampVertices;
-      std::vector<unsigned int> lampIndices;
-      importer.importOBJ("res/models/cube.obj", lampVertices, lampIndices);
-      lampMesh = new Mesh(lampVertices, lampIndices);
-
-      diffuseMap = loadTexture("res/textures/crate.png");
+      meshes.clear();
+      importer.importOBJ("res/models/cube.obj", meshes);
+      lampMesh = &meshes[0];
 
       // Generate and bind to FBO
       generateFBORBO(framebuffer, texColorBuffer, rbo);
@@ -65,21 +62,23 @@ class GodraysScene : public Scene
 
       // input
       // -----
-      processInput(window);
+      processInput();
 
-      // render
-      // ------
+      // Draw GUI
+      DrawGUI();
+
+      // Render
       glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       // view/projection transformations
-      projection = glm::perspective(glm::radians(camera.Zoom), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
+      projection = glm::perspective(glm::radians(camera.Zoom), (float)s_WindowWidth / (float)s_WindowHeight, 0.1f, 100.0f);
       view = camera.GetViewMatrix();
 
       //----------------------FIRST PASS----------------------\\
 
       // FBO is downsampled (+ performance)
-      glViewport(0, 0, windowWidth/4, windowHeight/4);
+      glViewport(0, 0, s_WindowWidth/4, s_WindowHeight/4);
 
       glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
       glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0f);
@@ -92,7 +91,7 @@ class GodraysScene : public Scene
       // Draw lamp
       DrawLamp();
 
-      glViewport(0, 0, windowWidth, windowHeight);
+      glViewport(0, 0, s_WindowWidth, s_WindowHeight);
 
       //----------------------SECOND PASS----------------------\\
 
@@ -128,15 +127,37 @@ class GodraysScene : public Scene
       glDrawArrays(GL_TRIANGLES, 0, 6);
 
       glDisable(GL_BLEND);
+
+      // Render GUI
+      ImGui::Render();
+      ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
+    }
+
+    // Imgui
+    void DrawGUI()
+    {
+      ImGui_ImplGlfwGL3_NewFrame();
+
+      ImGui::Text("Godrays Parameters!");
+      ImGui::SliderFloat("Exposure", &exposure, 0.0f, 0.01f);
+      ImGui::SliderFloat("Decay", &decay, 0.0f, 1.0f);
+      ImGui::SliderFloat("Density", &density, 0.0f, 1.0f);
+      ImGui::SliderFloat("Weight", &weight, 0.0f, 10.0f);
+
+      if (ImGui::Button("Set Light Here"))
+        lightPos = camera.Position;
+      ImGui::Text("Light Pos = %.3f %.3f %.3f", lightPos.x, lightPos.y, lightPos.z);
+
+      ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+      ImGui::Text("Test");
+      ImGui::Render();
+      ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
     // Sandbox functions
     void DrawModel(bool firstPass)
     {
-      // Bind textures
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, diffuseMap);
-
       // Set shader uniforms
       modelShader->use();
       modelShader->setMat4("projection", projection);
@@ -145,23 +166,31 @@ class GodraysScene : public Scene
       if (firstPass) {
         modelShader->setVec3("material.diffuse", glm::vec3(0.0f, 0.0f, 0.0f));
         modelShader->setVec3("material.specular", glm::vec3(0.0f, 0.0f, 0.0f));
+        modelShader->setFloat("material.shininess", 0.0f);
+        modelShader->setVec3("light.position", lightPos);
+        modelShader->setVec3("light.ambient", 0.0f, 0.0f, 0.0f);
+        modelShader->setVec3("light.diffuse", 0.0f, 0.0f, 0.0f);
+        modelShader->setVec3("light.specular", 0.0f, 0.0f, 0.0f);
+
       } else {
         modelShader->setVec3("material.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
         modelShader->setVec3("material.specular", glm::vec3(1.0f, 1.0f, 1.0f));
+        modelShader->setFloat("material.shininess", 128.0f);
+        modelShader->setVec3("light.position", lightPos);
+        modelShader->setVec3("light.ambient", 1.0f, 1.0f, 1.0f);
+        modelShader->setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
+        modelShader->setVec3("light.specular", 1.0f, 1.0f, 1.0f);
       }
 
-      modelShader->setFloat("material.shininess", 128.0f);
-      modelShader->setVec3("light.position", lightPos);
-      modelShader->setVec3("light.ambient", 1.0f, 1.0f, 1.0f);
-      modelShader->setVec3("light.diffuse", 0.5f, 0.5f, 0.5f);
-      modelShader->setVec3("light.specular", 1.0f, 1.0f, 1.0f);
-      modelShader->setVec3("viewPos", camera.Position);
+            modelShader->setVec3("viewPos", camera.Position);
 
       glm::mat4 model;
       modelShader->setMat4("model", model);
 
       // render the model
-      modelMesh->Draw(*modelShader);
+      for (std::vector<Mesh>::iterator it = modelMeshes.begin(); it != modelMeshes.end(); it++) {
+        it->Draw(*modelShader);
+      }
     }
 
     void DrawLamp()
@@ -191,15 +220,14 @@ class GodraysScene : public Scene
     Shader* lampShader;
     Shader* godraysShader;
 
-    Mesh* modelMesh;
+    std::vector<Mesh> modelMeshes;
     Mesh* lampMesh;
-    unsigned int diffuseMap;
 
     // Godrays settings
     float exposure = 0.0034f;
     float decay = 0.97f;
     float density = 0.84f;
-    float weight = 5.65f;
+    float weight = 3.65f;
 
     // Matrices
     glm::mat4 view;
@@ -207,7 +235,7 @@ class GodraysScene : public Scene
     
     // Lighting
     glm::vec3 lightPos;
-    glm::vec3 skyColor = glm::vec3(1.0f, 1.0f, 1.0f);
+    glm::vec3 skyColor = glm::vec3(0.3f, 0.3f, 0.3f);
 
     // Skybox
     Skybox* skybox;

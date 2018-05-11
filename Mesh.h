@@ -5,6 +5,7 @@
 
 #include "dep/glm/glm.hpp"
 #include "dep/glm/gtc/matrix_transform.hpp"
+#include "dep/stb_image/stb_image.h"
 
 #include "Shader.h"
 
@@ -35,33 +36,86 @@ struct Texture {
   string path;
 };
 
+struct Material {
+  string name;
+  string texPath;
+};
+
 class Mesh {
   public:
   /*  Mesh Data  */
     vector<Vertex> vertices;
     vector<unsigned int> indices;
-    vector<Texture> textures;
+    Material material;
+    unsigned int diffuseMap;
     unsigned int VAO;
 
     /*  Functions  */
     // constructor
-    Mesh(vector<Vertex>& vertices, vector<unsigned int>& indices)
+    Mesh(vector<Vertex> vertices, vector<unsigned int> indices, Material material)
     {
         this->vertices = vertices;
         this->indices = indices;
+        this->material = material;
+
+        if (!material.texPath.empty()) {
+          diffuseMap = loadTexture(material.texPath.c_str());
+        }
 
         // now that we have all the required data, set the vertex buffers and its attribute pointers.
         setupMesh();
     }
 
-    // render the mesh
+    // Render the mesh
     void Draw(Shader& shader)
     {
-      // draw mesh
+      // Bind textures
+      glActiveTexture(GL_TEXTURE0);
+      glBindTexture(GL_TEXTURE_2D, diffuseMap);
+      
+      // Draw mesh
       glBindVertexArray(VAO);
       glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
       glBindVertexArray(0);
 
+    }
+
+    // Utility function for loading a 2D texture from file
+    unsigned int loadTexture(char const * path)
+    {
+      unsigned int textureID;
+      glGenTextures(1, &textureID);
+
+      int width, height, nrComponents;
+      unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
+      if (data)
+      {
+        GLenum format;
+        if (nrComponents == 1)
+          format = GL_RED;
+        else if (nrComponents == 3)
+          format = GL_RGB;
+        else if (nrComponents == 4)
+          format = GL_RGBA;
+
+        glBindTexture(GL_TEXTURE_2D, textureID);
+        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+        stbi_image_free(data);
+      }
+      else
+      {
+        std::cout << "Texture failed to load at path: " << path << std::endl;
+        stbi_image_free(data);
+      }
+
+      return textureID;
     }
 
 private:

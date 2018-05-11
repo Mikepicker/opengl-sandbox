@@ -1,8 +1,8 @@
 #OBJS specifies which files to compile as part of the project
-OBJS = main.cpp glad.c dep/stb_image/stb_image.cpp
+OBJS = main.cpp glad.c dep/stb_image/stb_image.cpp dep/imgui/*.cpp
 
 #CC specifies which compiler we're using
-CC = g++ -std=c++14 -g
+CC = g++ -std=c++14 -Wall -Wextra -Wpedantic -g
 
 #COMPILER_FLAGS specifies the additional compilation options we're using
 # -w suppresses all warnings

@@ -34,19 +34,34 @@ static void printIndices(std::vector<unsigned int>& indices)
 class OBJImporter
 {
   public:
-    void importOBJ(const char* filename, std::vector<Vertex> &vertices, std::vector<unsigned int> &indices)
+    void importOBJ(const char* filename, std::vector<Mesh>& meshes)
     {
       std::vector<glm::vec3> temp_vertices;
       std::vector<glm::vec2> temp_uvs;
       std::vector<glm::vec3> temp_normals;
+      
+      std::vector<Vertex> vertices;
+      std::vector<unsigned int> indices;
 
       std::unordered_map<std::string, unsigned int> verticesMap;
+
+      std::unordered_map<std::string, Material> materialMap;
 
       std::ifstream in(filename, std::ifstream::in);
       if (!in)
       {
         std::cerr << "Cannot open " << filename << std::endl; exit(1);
       }
+
+      // Strip directory
+      std::string filenameS(filename);
+      std::string dir = filenameS.substr(0, filenameS.find_last_of("\\/"));
+
+      // First mesh flag
+      bool firstMesh = true;
+
+      // Current material
+      std::string currentMtl;
 
       std::string line;
       while (getline(in, line))
@@ -138,6 +153,29 @@ class OBJImporter
           indices.push_back(verticesMap[k2]);
           indices.push_back(verticesMap[k3]);
         }
+        else if (line.substr(0,7) == "mtllib ")
+        {
+          std::istringstream s(line.substr(7));
+          std::string mtlPath; 
+          s >> mtlPath;
+          std::cout << mtlPath << std::endl;
+          std::string fullPath = dir + "/" + mtlPath;
+          importMtl(fullPath.c_str(), materialMap);
+        }
+        else if (line.substr(0,7) == "usemtl ")
+        {
+          if (!firstMesh) {
+            Mesh mesh(vertices, indices, materialMap[currentMtl]);
+            meshes.push_back(mesh);
+            vertices.clear();
+            indices.clear();
+          }
+
+          firstMesh = false;
+
+          std::istringstream s(line.substr(7));
+          s >> currentMtl;
+        }
         else if (line[0] == '#')
         {
         }
@@ -145,6 +183,46 @@ class OBJImporter
         {
         }
       }
+
+      Mesh mesh(vertices, indices, materialMap[currentMtl]);
+      meshes.push_back(mesh);
+    }
+
+    void importMtl(const char* filename, std::unordered_map<std::string, Material>& mtlMap)
+    {
+      std::ifstream in(filename, std::ifstream::in);
+      if (!in)
+      {
+        std::cerr << "Cannot open " << filename << std::endl; exit(1);
+      }
+
+      std::string line;
+      Material currentMtl = Material();
+      bool first = true;
+      while (getline(in, line))
+      {
+        if (line.substr(0,7) == "newmtl ")
+        {
+          if (!first) {
+            mtlMap[currentMtl.name] = currentMtl;
+          }
+
+          first = false;
+
+          std::istringstream s(line.substr(7));
+          s >> currentMtl.name;
+        }
+        else if (line.substr(0, 7) == "map_Kd ")
+        {
+          std::istringstream s(line.substr(7));
+          s >> currentMtl.texPath;
+        }
+        else if (line[0] == '#')
+        {
+        }
+      }
+
+      mtlMap[currentMtl.name] = currentMtl;
     }
 };
 #endif

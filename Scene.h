@@ -9,14 +9,21 @@
 #include "dep/glm/glm.hpp"
 #include "dep/glm/gtc/matrix_transform.hpp"
 #include "dep/glm/gtc/type_ptr.hpp"
-#include "dep/stb_image/stb_image.h"
+#include "dep/imgui/imgui.h"
+#include "dep/imgui/imgui_impl_glfw_gl3.h"
 
 #include "Camera.h"
 
-// Static variables for GLFW
+// Static variables for GLFW (they must be updated by GLFW callbacks!)
+GLFWwindow* s_Window;
+unsigned int s_WindowWidth;
+unsigned int s_WindowHeight;
+
 float lastX = 0.0f;
 float lastY = 0.0f;
 bool firstMouse = true;
+bool captureMouse = true;
+
 Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -26,6 +33,9 @@ static void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 
 static void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 {
+  if (!captureMouse)
+    return;
+
   if (firstMouse)
   {
     lastX = xpos;
@@ -44,76 +54,63 @@ static void mouse_callback(GLFWwindow* window, double xpos, double ypos)
 
 static void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-  camera.ProcessMouseScroll(yoffset);
+  if (captureMouse)
+    camera.ProcessMouseScroll(yoffset);
+}
+
+static void mouse_button_callback(GLFWwindow* window, int button, int action, int mods)
+{
+  if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS)
+  {
+    captureMouse = !captureMouse;
+    glfwSetInputMode(window, GLFW_CURSOR, captureMouse ? GLFW_CURSOR_DISABLED : GLFW_CURSOR_NORMAL);
+  }
 }
 
 class Scene
 {
   public:
-    Scene(GLFWwindow* window, unsigned int width, unsigned int height) : window(window), windowWidth(width), windowHeight(height)
+    Scene(GLFWwindow* window, unsigned int width, unsigned int height)
     {
-      float lastX = width / 2.0f;
-      float lastY = height / 2.0f;
+      s_Window = window;
+      s_WindowWidth = width;
+      s_WindowHeight = height;
 
-      glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
-      glfwSetCursorPosCallback(window, mouse_callback);
-      glfwSetScrollCallback(window, scroll_callback);
+      lastX = width / 2.0f;
+      lastY = height / 2.0f;
 
+      glfwSetFramebufferSizeCallback(s_Window, framebuffer_size_callback);
+      glfwSetCursorPosCallback(s_Window, mouse_callback);
+      glfwSetScrollCallback(s_Window, scroll_callback);
+      glfwSetMouseButtonCallback(s_Window, mouse_button_callback);
+
+      // tell GLFW to capture our mouse
+      glfwSetInputMode(s_Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+
+      // Imgui
+      IMGUI_CHECKVERSION();
+      ImGui::CreateContext();
+      ImGuiIO& io = ImGui::GetIO(); (void)io;
+      ImGui_ImplGlfwGL3_Init(window, false);
+
+      ImGui::StyleColorsDark();
     }
 
-    //virtual void Draw();
-    void processInput(GLFWwindow *window)
-    {
-      if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
+    virtual void Draw() {}
 
-      if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+    void processInput()
+    {
+      if (glfwGetKey(s_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(s_Window, true);
+
+      if (glfwGetKey(s_Window, GLFW_KEY_W) == GLFW_PRESS)
         camera.ProcessKeyboard(FORWARD, deltaTime);
-      if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+      if (glfwGetKey(s_Window, GLFW_KEY_S) == GLFW_PRESS)
         camera.ProcessKeyboard(BACKWARD, deltaTime);
-      if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+      if (glfwGetKey(s_Window, GLFW_KEY_A) == GLFW_PRESS)
         camera.ProcessKeyboard(LEFT, deltaTime);
-      if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+      if (glfwGetKey(s_Window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
-    }
-    
-    // utility function for loading a 2D texture from file
-    // ---------------------------------------------------
-    unsigned int loadTexture(char const * path)
-    {
-      unsigned int textureID;
-      glGenTextures(1, &textureID);
-
-      int width, height, nrComponents;
-      unsigned char *data = stbi_load(path, &width, &height, &nrComponents, 0);
-      if (data)
-      {
-        GLenum format;
-        if (nrComponents == 1)
-          format = GL_RED;
-        else if (nrComponents == 3)
-          format = GL_RGB;
-        else if (nrComponents == 4)
-          format = GL_RGBA;
-
-        glBindTexture(GL_TEXTURE_2D, textureID);
-        glTexImage2D(GL_TEXTURE_2D, 0, format, width, height, 0, format, GL_UNSIGNED_BYTE, data);
-        glGenerateMipmap(GL_TEXTURE_2D);
-
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-
-        stbi_image_free(data);
-      }
-      else
-      {
-        std::cout << "Texture failed to load at path: " << path << std::endl;
-        stbi_image_free(data);
-      }
-
-      return textureID;
     }
 
     // Generate and bind FBO
@@ -125,7 +122,7 @@ class Scene
       // generate texture
       glGenTextures(1, &texColorBuffer);
       glBindTexture(GL_TEXTURE_2D, texColorBuffer);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, windowWidth/4, windowHeight/4, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s_WindowWidth/4, s_WindowHeight/4, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
       glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
       glBindTexture(GL_TEXTURE_2D, 0);
@@ -173,10 +170,6 @@ class Scene
     }
 
   protected:
-    // window
-    GLFWwindow* window;
-    unsigned int windowWidth;
-    unsigned int windowHeight;
 
     // timing
     float deltaTime = 0.0f;
