@@ -4,7 +4,7 @@
 #include "Scene.h"
 #include "Shader.h"
 #include "Mesh.h"
-#include "OBJImporter.h"
+#include "Model.h"
 #include "Skybox.h"
 
 #include <iostream>
@@ -23,25 +23,14 @@ class GodraysScene : public Scene
       // configure global opengl state
       glEnable(GL_DEPTH_TEST);
 
-      // build and compile our shader zprogram
-      modelShader = new Shader("basic.vs", "basic.fs");
-      lampShader = new Shader("lamp.vs", "lamp.fs");
+      // build and compile our shader program
+      modelShader = new Shader("res/shaders/basic/basic.vs", "res/shaders/basic/basic.fs");
+      lampShader = new Shader("res/shaders/basic/lamp.vs", "res/shaders/basic/lamp.fs");
       godraysShader = new Shader("res/shaders/godrays/godrays.vs", "res/shaders/godrays/godrays.fs");
 
-      // set up vertex data (and buffer(s)) and configure vertex attributes
-      std::vector<Mesh> meshes;
-      OBJImporter importer;
-      //importer.importOBJ("res/models/macarena/macarena.obj", meshes);
-      importer.importOBJ("res/models/tower/tower.obj", meshes);
-      //importer.importOBJ("res/models/arena.obj", meshes);
-
-      // Model mesh
-      modelMeshes = meshes;
-
-      // Lamp mesh
-      meshes.clear();
-      importer.importOBJ("res/models/cube.obj", meshes);
-      lampMeshes = meshes;
+      // Load models
+      tower = new Model("res/models/tower/tower.obj");
+      lamp = new Model("res/models/cube.obj");
 
       // Generate and bind to FBO
       generateFBORBO(framebuffer, texColorBuffer, rbo);
@@ -188,10 +177,7 @@ class GodraysScene : public Scene
       glm::mat4 model;
       modelShader->setMat4("model", model);
 
-      // render the model
-      for (std::vector<Mesh>::iterator it = modelMeshes.begin(); it != modelMeshes.end(); it++) {
-        it->Draw(*modelShader);
-      }
+      tower->Draw(*modelShader);
     }
 
     void DrawLamp()
@@ -204,9 +190,7 @@ class GodraysScene : public Scene
       model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
       lampShader->setMat4("model", model);
 
-      for (std::vector<Mesh>::iterator it = lampMeshes.begin(); it != lampMeshes.end(); it++) {
-        it->Draw(*lampShader);
-      }
+      lamp->Draw(*lampShader);
     }
 
   private:
@@ -221,8 +205,8 @@ class GodraysScene : public Scene
     Shader* lampShader;
     Shader* godraysShader;
 
-    std::vector<Mesh> modelMeshes;
-    std::vector<Mesh> lampMeshes;
+    Model* tower;
+    Model* lamp;
 
     // Godrays settings
     float exposure = 0.0034f;

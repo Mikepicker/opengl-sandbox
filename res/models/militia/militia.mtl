@@ -10,4 +10,4 @@ Ke 0.000000 0.000000 0.000000
 Ni 1.000000
 d 1.000000
 illum 1
-map_Kd c:/Blender y Photoshop/Militia T1/Militia-Texture.jpg
+map_Kd /home/mike/gamedev/cg/res/models/militia/militia.jpg
