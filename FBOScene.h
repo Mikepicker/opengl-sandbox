@@ -3,7 +3,7 @@
 
 #include "Scene.h"
 #include "Shader.h"
-#include "Mesh.h"
+#include "Model.h"
 #include "OBJImporter.h"
 
 #include <iostream>
@@ -22,24 +22,13 @@ class FBOScene : public Scene
       glEnable(GL_DEPTH_TEST);
 
       // build and compile our shader zprogram
-      modelShader = new Shader("basic.vs", "basic.fs");
-      lampShader = new Shader("lamp.vs", "lamp.fs");
+      modelShader = new Shader("res/shaders/basic/basic.vs", "res/shaders/basic/basic.fs");
+      lampShader = new Shader("res/shaders/basic/lamp.vs", "res/shaders/basic/lamp.fs");
       screenShader = new Shader("screen.vs", "screen.fs");
 
-      // set up vertex data (and buffer(s)) and configure vertex attributes
-      std::vector<Vertex> vertices;
-      std::vector<unsigned int> indices;
-      OBJImporter importer;
-      importer.importOBJ("res/models/cube.obj", vertices, indices);
-
-      // Model mesh
-      modelMesh = new Mesh(vertices, indices);
-
-      // Lamp mesh
-      lampMesh = new Mesh(vertices, indices);
-
-      diffuseMap = loadTexture("res/textures/crate.png");
-      specularMap = loadTexture("res/textures/crate_spec.png");
+      // Load models
+      cube = new Model("res/models/crate.obj");
+      lamp = new Model("res/models/cube.obj");
 
       // Generate and bind to FBO
       glGenFramebuffers(1, &framebuffer);
@@ -101,7 +90,7 @@ class FBOScene : public Scene
 
       // input
       // -----
-      processInput(window);
+      processInput();
 
       // render
       // ------
@@ -110,7 +99,7 @@ class FBOScene : public Scene
 
 
       // view/projection transformations
-      projection = glm::perspective(glm::radians(camera.Zoom), (float)windowWidth / (float)windowHeight, 0.1f, 100.0f);
+      projection = glm::perspective(glm::radians(camera.Zoom), (float)s_WindowWidth / (float)s_WindowHeight, 0.1f, 100.0f);
       view = camera.GetViewMatrix();
 
       // First pass - bind fbo
@@ -165,7 +154,7 @@ class FBOScene : public Scene
       modelShader->setMat4("model", model);
 
       // render the model
-      modelMesh->Draw(*modelShader);
+      cube->Draw(*modelShader);
     }
 
     void DrawLamp()
@@ -179,8 +168,7 @@ class FBOScene : public Scene
       model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
       lampShader->setMat4("model", model);
 
-      lampMesh->Draw(*lampShader);
-
+      lamp->Draw(*lampShader);
     }
 
   private:
@@ -194,8 +182,10 @@ class FBOScene : public Scene
     Shader* modelShader;
     Shader* lampShader;
     Shader* screenShader;
-    Mesh* modelMesh;
-    Mesh* lampMesh;
+
+    Model* cube;
+    Model* lamp;
+
     unsigned int diffuseMap;
     unsigned int specularMap;
 

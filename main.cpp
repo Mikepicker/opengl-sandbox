@@ -6,7 +6,7 @@
 #include <GLFW/glfw3.h>
 
 #include "StencilScene.h"
-//#include "FBOScene.h"
+#include "FBOScene.h"
 #include "GodraysScene.h"
 
 #define print(s) std::cout << s << std::endl;
@@ -41,8 +41,8 @@ int main()
     return -1;
   }
 
-  StencilScene scene(window, SCR_WIDTH, SCR_HEIGHT);
-  //FBOScene scene(window, SCR_WIDTH, SCR_HEIGHT);
+  //StencilScene scene(window, SCR_WIDTH, SCR_HEIGHT);
+  FBOScene scene(window, SCR_WIDTH, SCR_HEIGHT);
   //GodraysScene scene(window, SCR_WIDTH, SCR_HEIGHT);
 
   std::cout << glfwGetVersionString() << std::endl;
