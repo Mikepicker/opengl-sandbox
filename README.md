@@ -11,6 +11,7 @@ Features implemented so far:
 - A scene showcasing an implementation of light shafts (Godrays)
 - Skybox
 - Shaders class
+- Heightmap-based Terrain with textures interpolation
 
 # Some screenshots
 ![3D Model with outline](screenshots/outline.png)
