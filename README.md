@@ -16,3 +16,4 @@ Features implemented so far:
 ![3D Model with outline](screenshots/outline.png)
 ![Basic light shafts](screenshots/lightshafts_1.gif)
 ![Light shafts, 3D model and skybox](screenshots/lightshafts_2.gif)
+![Heightmap based terrain](screenshots/terrain.gif)

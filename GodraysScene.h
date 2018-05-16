@@ -100,6 +100,7 @@ class GodraysScene : public Scene
       glm::vec3 ndcLight = clipLight / clipLight.w;
 
       godraysShader->use();
+
       godraysShader->setVec2("lightPositionOnScreen", glm::vec2((ndcLight.x + 1) / 2, (ndcLight.y + 1) / 2));
       godraysShader->setInt("firstPass", 0);
       godraysShader->setFloat("exposure", exposure);

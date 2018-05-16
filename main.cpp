@@ -8,6 +8,7 @@
 #include "StencilScene.h"
 #include "FBOScene.h"
 #include "GodraysScene.h"
+#include "TerrainScene.h"
 
 #define print(s) std::cout << s << std::endl;
 
@@ -42,8 +43,10 @@ int main()
   }
 
   //StencilScene scene(window, SCR_WIDTH, SCR_HEIGHT);
-  FBOScene scene(window, SCR_WIDTH, SCR_HEIGHT);
+  //FBOScene scene(window, SCR_WIDTH, SCR_HEIGHT);
   //GodraysScene scene(window, SCR_WIDTH, SCR_HEIGHT);
+  TerrainScene scene(window, SCR_WIDTH, SCR_HEIGHT);
+  //TerrainScene scene(window, SCR_WIDTH, SCR_HEIGHT, "res/textures/board.jpg");
 
   std::cout << glfwGetVersionString() << std::endl;
 
