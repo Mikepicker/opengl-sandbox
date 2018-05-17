@@ -66,7 +66,7 @@ class StencilScene : public Scene
       model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
       lampShader->setMat4("model", model);
 
-      lamp->Draw(*lampShader);
+      lamp->Draw();
     }
 
     // Sandbox functions
@@ -95,7 +95,7 @@ class StencilScene : public Scene
       modelShader->setMat4("model", model);
       
       // render the model
-      character->Draw(*modelShader);
+      character->Draw();
 
       // OUTLINE
       glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
@@ -113,7 +113,7 @@ class StencilScene : public Scene
       outlineShader->setMat4("view", view);
       outlineShader->setMat4("model", model);
 
-      outline->Draw(*outlineShader);
+      outline->Draw();
 
       glStencilMask(0xFF);
       glEnable(GL_DEPTH_TEST);

@@ -2,7 +2,6 @@
 #define MODEL_H
 
 #include "Mesh.h"
-#include "Shader.h"
 #include "OBJImporter.h"
 
 #include <vector>
@@ -16,15 +15,15 @@ class Model
       importer.importOBJ(filename, meshes);
     }
 
-    void Draw(Shader& shader)
+    void Draw()
     {
       for (std::vector<Mesh>::iterator it = meshes.begin(); it != meshes.end(); it++)
       {
-        it->Draw(shader);
+        it->Draw();
       }
     }
 
-  private:
+  protected:
     std::vector<Mesh> meshes;
 };
 #endif

@@ -104,7 +104,7 @@ class TerrainScene : Scene
       model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
       lampShader->setMat4("model", model);
 
-      lamp->Draw(*lampShader);
+      lamp->Draw();
     }
 
     // Imgui

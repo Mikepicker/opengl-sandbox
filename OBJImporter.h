@@ -63,6 +63,9 @@ class OBJImporter
       // Current material
       std::string currentMtl;
 
+      // Current object
+      std::string currentObj;
+
       std::string line;
       while (getline(in, line))
       {
@@ -164,8 +167,14 @@ class OBJImporter
         }
         else if (line.substr(0,7) == "usemtl ")
         {
+          std::istringstream s(line.substr(7));
+          s >> currentMtl;
+        }
+        else if (line.substr(0,2) == "o ")
+        {
           if (!firstMesh) {
             Mesh mesh(vertices, indices, materialMap[currentMtl]);
+            mesh.name = currentObj;
             meshes.push_back(mesh);
             vertices.clear();
             indices.clear();
@@ -173,8 +182,9 @@ class OBJImporter
 
           firstMesh = false;
 
-          std::istringstream s(line.substr(7));
-          s >> currentMtl;
+          currentMtl = "";
+          std::istringstream s(line.substr(2));
+          s >> currentObj;
         }
         else if (line[0] == '#')
         {
@@ -205,6 +215,7 @@ class OBJImporter
         {
           if (!first) {
             mtlMap[currentMtl.name] = currentMtl;
+            currentMtl = Material();
           }
 
           first = false;
@@ -216,6 +227,11 @@ class OBJImporter
         {
           std::istringstream s(line.substr(7));
           s >> currentMtl.texPath;
+        }
+        else if (line.substr(0, 9) == "map_bump ")
+        {
+          std::istringstream s(line.substr(9));
+          s >> currentMtl.normalPath;
         }
         else if (line[0] == '#')
         {

@@ -45,13 +45,11 @@ class GodraysScene : public Scene
     void Draw()
     {
       // per-frame time logic
-      // --------------------
       float currentFrame = glfwGetTime();
       deltaTime = currentFrame - lastFrame;
       lastFrame = currentFrame;
 
       // input
-      // -----
       processInput();
 
       // Draw GUI
@@ -178,7 +176,7 @@ class GodraysScene : public Scene
       glm::mat4 model;
       modelShader->setMat4("model", model);
 
-      tower->Draw(*modelShader);
+      tower->Draw();
     }
 
     void DrawLamp()
@@ -191,7 +189,7 @@ class GodraysScene : public Scene
       model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
       lampShader->setMat4("model", model);
 
-      lamp->Draw(*lampShader);
+      lamp->Draw();
     }
 
   private:

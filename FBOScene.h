@@ -154,7 +154,7 @@ class FBOScene : public Scene
       modelShader->setMat4("model", model);
 
       // render the model
-      cube->Draw(*modelShader);
+      cube->Draw();
     }
 
     void DrawLamp()
@@ -168,7 +168,7 @@ class FBOScene : public Scene
       model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
       lampShader->setMat4("model", model);
 
-      lamp->Draw(*lampShader);
+      lamp->Draw();
     }
 
   private:
