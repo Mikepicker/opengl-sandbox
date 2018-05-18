@@ -7,6 +7,12 @@
 
 #include <vector>
 
+struct ShaderParams
+{
+  float la, ld, ls; // Light Ambient/Diffuse/Specular
+  int s;            // Shininess
+};
+
 class CryptModel : Model
 {
   public:
@@ -16,7 +22,7 @@ class CryptModel : Model
       nmShader = new Shader("res/shaders/normalmap/normalmap.vs", "res/shaders/normalmap/normalmap.fs");
     }
 
-    void Draw(glm::mat4& projection, glm::mat4& view, Camera& camera, glm::vec3& lightPos)
+    void Draw(glm::mat4& projection, glm::mat4& view, Camera& camera, glm::vec3& lightPos, ShaderParams& basicParams, ShaderParams& normalParams)
     {
       for (std::vector<Mesh>::iterator it = meshes.begin(); it != meshes.end(); it++)
       {
@@ -33,6 +39,11 @@ class CryptModel : Model
           nmShader->setMat4("view", view);
           nmShader->setVec3("viewPos", camera.Position);
           nmShader->setVec3("lightPos", lightPos);
+          nmShader->setVec3("light.ambient", glm::vec3(normalParams.la));
+          nmShader->setVec3("light.diffuse", glm::vec3(normalParams.ld));
+          nmShader->setVec3("light.specular", glm::vec3(normalParams.ls));
+          nmShader->setFloat("shininess", normalParams.s);
+
         } else
         {
           // Draw mesh with diffuse texture
@@ -41,11 +52,11 @@ class CryptModel : Model
           basicShader->setMat4("projection", projection);
           basicShader->setMat4("view", view);
           basicShader->setVec3("viewPos", camera.Position);
-          basicShader->setFloat("material.shininess", 32);
+          basicShader->setFloat("material.shininess", basicParams.s);
           basicShader->setVec3("light.position", lightPos);
-          basicShader->setVec3("light.ambient", glm::vec3(0.5f, 0.5f, 0.5f));
-          basicShader->setVec3("light.diffuse", glm::vec3(0.5f, 0.5f, 0.5f));
-          basicShader->setVec3("light.specular", glm::vec3(0.5f, 0.5f, 0.5f));
+          basicShader->setVec3("light.ambient", glm::vec3(basicParams.la));
+          basicShader->setVec3("light.diffuse", glm::vec3(basicParams.ld));
+          basicShader->setVec3("light.specular", glm::vec3(basicParams.ls));
         }
 
         

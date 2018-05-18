@@ -15,8 +15,8 @@
 #define print(s) std::cout << s << std::endl;
 
 // settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
+const unsigned int SCR_WIDTH = 1280;
+const unsigned int SCR_HEIGHT = 720;
 
 int main()
 {
@@ -46,10 +46,10 @@ int main()
 
   //StencilScene scene(window, SCR_WIDTH, SCR_HEIGHT);
   //FBOScene scene(window, SCR_WIDTH, SCR_HEIGHT);
-  //GodraysScene scene(window, SCR_WIDTH, SCR_HEIGHT);
+  GodraysScene scene(window, SCR_WIDTH, SCR_HEIGHT);
   //TerrainScene scene(window, SCR_WIDTH, SCR_HEIGHT);
   //NormalMapScene scene(window, SCR_WIDTH, SCR_HEIGHT);
-  CryptScene scene(window, SCR_WIDTH, SCR_HEIGHT);
+  //CryptScene scene(window, SCR_WIDTH, SCR_HEIGHT);
 
   std::cout << glfwGetVersionString() << std::endl;
 
