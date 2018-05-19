@@ -46,10 +46,10 @@ int main()
 
   //StencilScene scene(window, SCR_WIDTH, SCR_HEIGHT);
   //FBOScene scene(window, SCR_WIDTH, SCR_HEIGHT);
-  GodraysScene scene(window, SCR_WIDTH, SCR_HEIGHT);
+  //GodraysScene scene(window, SCR_WIDTH, SCR_HEIGHT);
   //TerrainScene scene(window, SCR_WIDTH, SCR_HEIGHT);
   //NormalMapScene scene(window, SCR_WIDTH, SCR_HEIGHT);
-  //CryptScene scene(window, SCR_WIDTH, SCR_HEIGHT);
+  CryptScene scene(window, SCR_WIDTH, SCR_HEIGHT);
 
   std::cout << glfwGetVersionString() << std::endl;
 

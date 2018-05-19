@@ -19,7 +19,8 @@ class ShadowMap
     glm::mat4 lightProjection, lightView;
     glm::mat4 lightSpaceMatrix;
 
-    ShadowMap()
+    ShadowMap(unsigned int windowWidth, unsigned int windowHeight)
+      : windowWidth(windowWidth), windowHeight(windowHeight)
     {
       // Init shaders
       shadowDepthShader = new Shader("res/shaders/shadow/shadowdepth.vs", "res/shaders/shadow/shadowdepth.fs");
@@ -66,6 +67,9 @@ class ShadowMap
         model.Draw();
         glCullFace(GL_BACK);
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+      glViewport(0, 0, windowWidth, windowHeight);
+      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     }
 
     void Bind()
@@ -87,6 +91,8 @@ class ShadowMap
     }
 
   private:
+    unsigned int windowWidth, windowHeight;
+
     Shader* shadowDepthShader;
     Shader* debugShadowMapShader;
 

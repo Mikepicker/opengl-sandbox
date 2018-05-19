@@ -6,6 +6,7 @@
 #include "CryptModel.h"
 #include "Shader.h"
 #include "ShadowMap.h"
+#include "Godrays.h"
 
 class CryptScene : Scene
 {
@@ -15,7 +16,7 @@ class CryptScene : Scene
     {
       // Load shaders
       lampShader = new Shader("res/shaders/basic/lamp.vs", "res/shaders/basic/lamp.fs");
-      shadowMapShader = new Shader("res/shaders/shadow/shadowmap.vs", "res/shaders/shadow/shadowmap.fs");
+      uberShader = new Shader("res/shaders/ubershader.vs", "res/shaders/ubershader.fs");
 
       // Shader params
       basicParams.la = basicParams.ld = basicParams.ls = 0.5f;
@@ -30,10 +31,18 @@ class CryptScene : Scene
 
       // Global OpenGL setting
       glEnable(GL_DEPTH_TEST);
-      glEnable(GL_CULL_FACE);
+      //glEnable(GL_CULL_FACE);
 
       // ShadowMap
-      shadowMap = new ShadowMap();
+      shadowMap = new ShadowMap(width, height);
+
+      // Godrays
+      godrays = new Godrays(s_WindowWidth, s_WindowHeight);
+      godraysParams.exposure = 0.0034f;
+      godraysParams.decay = 1.0f;
+      godraysParams.density = 0.84f;
+      godraysParams.weight = 3.65f;
+
     }
 
     void Draw()
@@ -50,31 +59,22 @@ class CryptScene : Scene
       projection = glm::perspective(glm::radians(camera.Zoom), (float)s_WindowWidth / (float)s_WindowHeight, 0.1f, 100.0f);
       view = camera.GetViewMatrix();
 
-      // Clear color and buffers
-      glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+      // Bind Godrays
+      godrays->Bind();
+        DrawOcclusionScene();
+        DrawLamp();
+      godrays->Unbind();
 
       // 1. Compute Shadow Map
       shadowMap->ComputeShadowMap(lightPos, *test);
 
       // 2. Render scene as normal using the generated depth/shadow map
-      glViewport(0, 0, s_WindowWidth, s_WindowHeight);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-      shadowMapShader->use();
-      shadowMapShader->setMat4("projection", projection);
-      shadowMapShader->setMat4("view", view);
-      shadowMapShader->setMat4("model", glm::mat4());
-      shadowMapShader->setBool("softShadows", softShadows);
-
-      // Set light uniforms
-      shadowMapShader->setVec3("viewPos", camera.Position);
-      shadowMapShader->setVec3("lightPos", lightPos);
-      shadowMapShader->setMat4("lightSpaceMatrix", shadowMap->lightSpaceMatrix);
-      shadowMapShader->setInt("diffuseTexture", 0);
-      shadowMapShader->setInt("shadowMap", 2);
       shadowMap->Bind();
-      test->Draw();
+      DrawScene();
+      DrawLamp();
+
+      // Blend godrays
+      godrays->Draw(projection, view, lightPos, godraysParams);
       
       // Draw GUI
       DrawGUI();
@@ -84,9 +84,7 @@ class CryptScene : Scene
 
     // Shaders
     Shader* lampShader;
-    Shader* shadowMapShader;
-    Shader* shadowDepthShader;
-    Shader* debugShadowMapShader;
+    Shader* uberShader;
 
     // Models
     CryptModel* crypt;
@@ -98,7 +96,7 @@ class CryptScene : Scene
     glm::mat4 projection;
 
     // Lighting
-    glm::vec3 lightPos = glm::vec3(0.0f, 2.5f, -9.0f);
+    glm::vec3 lightPos = glm::vec3(3.0f, 6.5f, -14.5f);
 
     // Shader params
     ShaderParams normalParams, basicParams;
@@ -106,6 +104,10 @@ class CryptScene : Scene
 
     // ShadowMap
     ShadowMap* shadowMap;
+
+    // Godrays
+    Godrays* godrays;
+    GodraysParams godraysParams;
     
     // Draw Scene
     void DrawScene()
@@ -115,7 +117,77 @@ class CryptScene : Scene
       view = camera.GetViewMatrix();*/
 
       // Draw crypt
-      crypt->Draw(projection, view, camera, lightPos, basicParams, normalParams); 
+      //crypt->Draw(projection, view, camera, lightPos, basicParams, normalParams); 
+
+      uberShader->use();
+      uberShader->setMat4("projection", projection);
+      uberShader->setMat4("view", view);
+      uberShader->setMat4("model", glm::mat4());
+
+      // Shadows
+      uberShader->setBool("softShadows", softShadows);
+      uberShader->setInt("shadowMap", 2);
+
+      // Set light uniforms
+      uberShader->setVec3("viewPos", camera.Position);
+      uberShader->setVec3("lightPos", lightPos);
+      uberShader->setMat4("lightSpaceMatrix", shadowMap->lightSpaceMatrix);
+
+      // Material
+      uberShader->setInt("material.diffuse", 0);
+      uberShader->setFloat("material.shininess", 64.0f);
+
+      // Light
+      uberShader->setVec3("light.position", lightPos);
+      uberShader->setVec3("light.ambient", glm::vec3(basicParams.la));
+      uberShader->setVec3("light.diffuse", glm::vec3(basicParams.ld));
+      uberShader->setVec3("light.specular", glm::vec3(basicParams.ls));
+
+      test->Draw();
+    }
+
+    void DrawOcclusionScene()
+    {
+      uberShader->use();
+      uberShader->setMat4("projection", projection);
+      uberShader->setMat4("view", view);
+      uberShader->setMat4("model", glm::mat4());
+
+      // Shadows
+      uberShader->setBool("softShadows", softShadows);
+      uberShader->setInt("shadowMap", 2);
+
+      // Set light uniforms
+      uberShader->setVec3("viewPos", camera.Position);
+      uberShader->setVec3("lightPos", lightPos);
+      uberShader->setMat4("lightSpaceMatrix", shadowMap->lightSpaceMatrix);
+
+      // Material
+      uberShader->setInt("material.diffuse", 0);
+      uberShader->setFloat("material.shininess", 0.0f);
+
+      // Light
+      uberShader->setVec3("light.position", lightPos);
+      uberShader->setVec3("light.ambient", glm::vec3(0.0f));
+      uberShader->setVec3("light.diffuse", glm::vec3(0.0f));
+      uberShader->setVec3("light.specular", glm::vec3(0.0f));
+
+      //crypt->Draw(projection, view, camera, lightPos, p, p); 
+      
+      test->Draw();
+    }
+
+    void DrawLamp()
+    {
+      lampShader->use();
+      lampShader->setMat4("projection", projection);
+      lampShader->setMat4("view", view);
+      glm::mat4 model = glm::mat4();
+      model = glm::translate(model, lightPos);
+      model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+      lampShader->setMat4("model", model);
+
+      lamp->Draw();
     }
 
     // Imgui
@@ -123,28 +195,45 @@ class CryptScene : Scene
     {
       ImGui_ImplGlfwGL3_NewFrame();
 
-      ImGui::Text("Normal Parameters");
-      ImGui::SliderFloat("Normal Light Ambient", &normalParams.la, 0.0f, 1.0f);
-      ImGui::SliderFloat("Normal Light Diffuse", &normalParams.ld, 0.0f, 1.0f);
-      ImGui::SliderFloat("Normal Light Specular", &normalParams.ls, 0.0f, 1.0f);
-      ImGui::SliderInt("Normal Shininess", &normalParams.s, 0.0f, 128.0f);
+      ImGui::Begin("Materials");
 
-      ImGui::Text("Basic Parameters");
-      ImGui::SliderFloat("Basic Light Ambient", &basicParams.la, 0.0f, 1.0f);
-      ImGui::SliderFloat("Basic Light Diffuse", &basicParams.ld, 0.0f, 1.0f);
-      ImGui::SliderFloat("Basic Light Specular", &basicParams.ls, 0.0f, 1.0f);
-      ImGui::SliderInt("Basic Shininess", &basicParams.s, 0.0f, 128.0f);
+        ImGui::Text("Normal Parameters");
+        ImGui::SliderFloat("Normal Light Ambient", &normalParams.la, 0.0f, 1.0f);
+        ImGui::SliderFloat("Normal Light Diffuse", &normalParams.ld, 0.0f, 1.0f);
+        ImGui::SliderFloat("Normal Light Specular", &normalParams.ls, 0.0f, 1.0f);
+        ImGui::SliderInt("Normal Shininess", &normalParams.s, 0.0f, 128.0f);
 
-      if (ImGui::Button("Toggle Soft Shadows"))
-        softShadows = !softShadows;
-      ImGui::Text("Soft Shadows %s", softShadows ? "On" : "Off");
+        ImGui::Text("Basic Parameters");
+        ImGui::SliderFloat("Basic Light Ambient", &basicParams.la, 0.0f, 1.0f);
+        ImGui::SliderFloat("Basic Light Diffuse", &basicParams.ld, 0.0f, 1.0f);
+        ImGui::SliderFloat("Basic Light Specular", &basicParams.ls, 0.0f, 1.0f);
+        ImGui::SliderInt("Basic Shininess", &basicParams.s, 0.0f, 128.0f);
 
-      if (ImGui::Button("Set Light Here"))
-        lightPos = camera.Position;
-      ImGui::Text("Light Pos = %.3f %.3f %.3f", lightPos.x, lightPos.y, lightPos.z);
-      ImGui::Text("Camera Pos = %.3f %.3f %.3f", camera.Position.x, camera.Position.y, camera.Position.z);
+        if (ImGui::Button("Toggle Soft Shadows"))
+          softShadows = !softShadows;
+        ImGui::Text("Soft Shadows %s", softShadows ? "On" : "Off");
 
-      ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+        if (ImGui::Button("Set Light Here"))
+          lightPos = camera.Position;
+        ImGui::Text("Light Pos = %.3f %.3f %.3f", lightPos.x, lightPos.y, lightPos.z);
+        ImGui::Text("Camera Pos = %.3f %.3f %.3f", camera.Position.x, camera.Position.y, camera.Position.z);
+
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+
+      ImGui::End();
+
+      ImGui::Begin("Godrays");
+        ImGui::SliderFloat("Exposure", &godraysParams.exposure, 0.0f, 0.01f);
+        ImGui::SliderFloat("Decay", &godraysParams.decay, 0.0f, 1.0f);
+        ImGui::SliderFloat("Density", &godraysParams.density, 0.0f, 1.0f);
+        ImGui::SliderFloat("Weight", &godraysParams.weight, 0.0f, 10.0f);
+
+        if (ImGui::Button("Set Light Here"))
+          lightPos = camera.Position;
+        ImGui::Text("Light Pos = %.3f %.3f %.3f", lightPos.x, lightPos.y, lightPos.z);
+
+      ImGui::End();
 
       ImGui::Render();
       ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());

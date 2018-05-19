@@ -41,22 +41,24 @@ class GodraysScene : public Scene
 
       // Generate skybox
       skybox = new Skybox();
+
+      glEnable(GL_DEPTH_TEST);
     }
 
     void Draw()
     {
-      // per-frame time logic
+      // Per-frame time logic
       float currentFrame = glfwGetTime();
       deltaTime = currentFrame - lastFrame;
       lastFrame = currentFrame;
 
-      // input
+      // Input
       processInput();
 
       // Draw GUI
       DrawGUI();
 
-      // view/projection transformations
+      // View/projection transformations
       projection = glm::perspective(glm::radians(camera.Zoom), (float)s_WindowWidth / (float)s_WindowHeight, 0.1f, 100.0f);
       view = camera.GetViewMatrix();
 
@@ -64,10 +66,6 @@ class GodraysScene : public Scene
 
       // Bind Godrays and draw lamp + black models
       godrays->Bind();
-
-      glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-      glEnable(GL_DEPTH_TEST);
 
       // Draw model
       SetShaderParams(true); 

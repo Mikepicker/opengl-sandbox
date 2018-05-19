@@ -9,7 +9,7 @@ uniform float density;
 uniform float weight;
 uniform vec2 lightPositionOnScreen;
 uniform sampler2D firstPass;
-const int NUM_SAMPLES = 100;
+const int NUM_SAMPLES = 50;
 
 void main()
 {	
