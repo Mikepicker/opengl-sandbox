@@ -6,6 +6,7 @@
 #include "Mesh.h"
 #include "Model.h"
 #include "Skybox.h"
+#include "Godrays.h"
 
 #include <iostream>
 #include <vector>
@@ -26,17 +27,17 @@ class GodraysScene : public Scene
       // build and compile our shader program
       modelShader = new Shader("res/shaders/basic/basic.vs", "res/shaders/basic/basic.fs");
       lampShader = new Shader("res/shaders/basic/lamp.vs", "res/shaders/basic/lamp.fs");
-      godraysShader = new Shader("res/shaders/godrays/godrays.vs", "res/shaders/godrays/godrays.fs");
 
       // Load models
       tower = new Model("res/models/tower/tower.obj");
       lamp = new Model("res/models/cube.obj");
 
-      // Generate and bind to FBO
-      generateFBORBO(framebuffer, texColorBuffer, rbo);
-      
-      // Create quad VAO
-      generateQuad(quadVAO, quadVBO); 
+      // Godrays
+      godrays = new Godrays(s_WindowWidth, s_WindowHeight);
+      godraysParams.exposure = 0.0034f;
+      godraysParams.decay = 0.97f;
+      godraysParams.density = 0.84f;
+      godraysParams.weight = 3.65f;
 
       // Generate skybox
       skybox = new Skybox();
@@ -61,30 +62,30 @@ class GodraysScene : public Scene
 
       //----------------------FIRST PASS----------------------\\
 
-      // FBO is downsampled (+ performance)
-      glViewport(0, 0, s_WindowWidth/4, s_WindowHeight/4);
+      // Bind Godrays and draw lamp + black models
+      godrays->Bind();
 
-      glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
       glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       glEnable(GL_DEPTH_TEST);
 
       // Draw model
-      DrawModel(true); 
+      SetShaderParams(true); 
+      tower->Draw();
 
       // Draw lamp
       DrawLamp();
 
-      glViewport(0, 0, s_WindowWidth, s_WindowHeight);
-
       //----------------------SECOND PASS----------------------\\
 
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
+      godrays->Unbind();
+
       glClearColor(skyColor.x, skyColor.y, skyColor.z, 1.0f);
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       // Draw model
-      DrawModel(false); 
+      SetShaderParams(false); 
+      tower->Draw();
 
       // Draw lamp
       DrawLamp();
@@ -94,27 +95,8 @@ class GodraysScene : public Scene
 
       //----------------------THIRD PASS----------------------\\
 
-      glm::vec4 clipLight = projection * view * glm::vec4(lightPos.x, lightPos.y, lightPos.z, 1.0);
-      glm::vec3 ndcLight = clipLight / clipLight.w;
-
-      godraysShader->use();
-
-      godraysShader->setVec2("lightPositionOnScreen", glm::vec2((ndcLight.x + 1) / 2, (ndcLight.y + 1) / 2));
-      godraysShader->setInt("firstPass", 0);
-      godraysShader->setFloat("exposure", exposure);
-      godraysShader->setFloat("decay", decay);
-      godraysShader->setFloat("density", density);
-      godraysShader->setFloat("weight", weight);
-      
-      glEnable(GL_BLEND);
-			glBlendFunc(GL_SRC_ALPHA, GL_ONE);
-
-      glBindVertexArray(quadVAO);
-      glActiveTexture(GL_TEXTURE0);
-      glBindTexture(GL_TEXTURE_2D, texColorBuffer);
-      glDrawArrays(GL_TRIANGLES, 0, 6);
-
-      glDisable(GL_BLEND);
+      // Blend Godrays FBO with the scene
+      godrays->Draw(projection, view, lightPos, godraysParams);
 
       // Render GUI
       ImGui::Render();
@@ -126,11 +108,11 @@ class GodraysScene : public Scene
     {
       ImGui_ImplGlfwGL3_NewFrame();
 
-      ImGui::Text("Godrays Parameters!");
-      ImGui::SliderFloat("Exposure", &exposure, 0.0f, 0.01f);
-      ImGui::SliderFloat("Decay", &decay, 0.0f, 1.0f);
-      ImGui::SliderFloat("Density", &density, 0.0f, 1.0f);
-      ImGui::SliderFloat("Weight", &weight, 0.0f, 10.0f);
+      ImGui::Text("Godrays Parameters");
+      ImGui::SliderFloat("Exposure", &godraysParams.exposure, 0.0f, 0.01f);
+      ImGui::SliderFloat("Decay", &godraysParams.decay, 0.0f, 1.0f);
+      ImGui::SliderFloat("Density", &godraysParams.density, 0.0f, 1.0f);
+      ImGui::SliderFloat("Weight", &godraysParams.weight, 0.0f, 10.0f);
 
       if (ImGui::Button("Set Light Here"))
         lightPos = camera.Position;
@@ -138,13 +120,12 @@ class GodraysScene : public Scene
 
       ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-      ImGui::Text("Test");
       ImGui::Render();
       ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
     }
 
     // Sandbox functions
-    void DrawModel(bool firstPass)
+    void SetShaderParams(bool firstPass)
     {
       // Set shader uniforms
       modelShader->use();
@@ -175,8 +156,6 @@ class GodraysScene : public Scene
 
       glm::mat4 model;
       modelShader->setMat4("model", model);
-
-      tower->Draw();
     }
 
     void DrawLamp()
@@ -193,25 +172,15 @@ class GodraysScene : public Scene
     }
 
   private:
-    unsigned int framebuffer;
-    unsigned int rbo;
-    unsigned int texColorBuffer;
-
-    unsigned int quadVBO;
-    unsigned int quadVAO;
-
     Shader* modelShader;
     Shader* lampShader;
-    Shader* godraysShader;
 
     Model* tower;
     Model* lamp;
 
     // Godrays settings
-    float exposure = 0.0034f;
-    float decay = 0.97f;
-    float density = 0.84f;
-    float weight = 3.65f;
+    Godrays* godrays;
+    GodraysParams godraysParams;
 
     // Matrices
     glm::mat4 view;
