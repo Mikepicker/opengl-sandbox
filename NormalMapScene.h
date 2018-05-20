@@ -42,8 +42,8 @@ class NormalMapScene : Scene
       glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
       //lightPos = camera.Position;
-      lightPos.x = sin(glfwGetTime()) * 10;
-      lightPos.z = cos(glfwGetTime()) * 10;
+      lightPos.x = sin(glfwGetTime()) * 2;
+      lightPos.z = cos(glfwGetTime()) * 2;
 
       // Set uniforms
       glm::mat4 model;
@@ -55,9 +55,15 @@ class NormalMapScene : Scene
       nmShader->setMat4("view", view);
       nmShader->setVec3("viewPos", camera.Position);
       nmShader->setVec3("lightPos", lightPos);
+      nmShader->setVec3("light.ambient", glm::vec3(0.5f));
+      nmShader->setVec3("light.diffuse", glm::vec3(0.5f));
+      nmShader->setVec3("light.specular", glm::vec3(0.0f));
+      nmShader->setFloat("shininess", 32.0f);
 
       // Draw cube model
       cube->Draw(); 
+
+      DrawLamp();
     }
 
   private:
@@ -75,7 +81,20 @@ class NormalMapScene : Scene
     glm::mat4 projection;
 
     // Lighting
-    glm::vec3 lightPos = glm::vec3(4.0f, 4.0f, -4.0f);
+    glm::vec3 lightPos = glm::vec3(1.0f, 0.0f, -1.0f);
+
+    void DrawLamp()
+    {
+      lampShader->use();
+      lampShader->setMat4("projection", projection);
+      lampShader->setMat4("view", view);
+      glm::mat4 model = glm::mat4();
+      model = glm::translate(model, lightPos);
+      model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+      lampShader->setMat4("model", model);
+
+      lamp->Draw();
+    }
 };
 
 #endif

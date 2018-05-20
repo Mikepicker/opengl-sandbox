@@ -21,13 +21,10 @@ class CryptScene : Scene
       // Shader params
       basicParams.la = basicParams.ld = basicParams.ls = 0.5f;
       basicParams.s = 32;
-      normalParams.la = normalParams.ld = normalParams.ls = 0.5f;
-      normalParams.s = 32;
 
       // Load models
       crypt = new CryptModel("res/models/crypt/crypt.obj");
       lamp = new Model("res/models/cube.obj");
-      test = new Model("res/models/crypt/crypt.obj");
 
       // Global OpenGL setting
       glEnable(GL_DEPTH_TEST);
@@ -42,36 +39,34 @@ class CryptScene : Scene
       godraysParams.decay = 1.0f;
       godraysParams.density = 0.84f;
       godraysParams.weight = 3.65f;
-
     }
 
     void Draw()
     {
-      // Per-frame time logic
-      float currentFrame = glfwGetTime();
-      deltaTime = currentFrame - lastFrame;
-      lastFrame = currentFrame;
-
-      // Input
-      processInput();
+      Scene::Draw();
 
       // Projection - View matrices
       projection = glm::perspective(glm::radians(camera.Zoom), (float)s_WindowWidth / (float)s_WindowHeight, 0.1f, 100.0f);
       view = camera.GetViewMatrix();
 
+      if (lightFollowCamera)
+        lightPos = camera.Position;
+
       // Bind Godrays
       godrays->Bind();
         DrawOcclusionScene();
-        DrawLamp();
+        if (!lightFollowCamera)
+          DrawLamp();
       godrays->Unbind();
 
       // 1. Compute Shadow Map
-      shadowMap->ComputeShadowMap(lightPos, *test);
+      shadowMap->ComputeShadowMap(lightPos, *crypt);
 
       // 2. Render scene as normal using the generated depth/shadow map
       shadowMap->Bind();
       DrawScene();
-      DrawLamp();
+      if (!lightFollowCamera)
+        DrawLamp();
 
       // Blend godrays
       godrays->Draw(projection, view, lightPos, godraysParams);
@@ -87,9 +82,8 @@ class CryptScene : Scene
     Shader* uberShader;
 
     // Models
-    CryptModel* crypt;
+    Model* crypt;
     Model* lamp;
-    Model* test;
 
     // Matrices
     glm::mat4 view;
@@ -97,9 +91,10 @@ class CryptScene : Scene
 
     // Lighting
     glm::vec3 lightPos = glm::vec3(3.0f, 6.5f, -14.5f);
+    bool lightFollowCamera = false;
 
     // Shader params
-    ShaderParams normalParams, basicParams;
+    ShaderParams basicParams;
     bool softShadows = false;
 
     // ShadowMap
@@ -135,6 +130,7 @@ class CryptScene : Scene
 
       // Material
       uberShader->setInt("material.diffuse", 0);
+      uberShader->setInt("normalMap", 1);
       uberShader->setFloat("material.shininess", 64.0f);
 
       // Light
@@ -143,7 +139,7 @@ class CryptScene : Scene
       uberShader->setVec3("light.diffuse", glm::vec3(basicParams.ld));
       uberShader->setVec3("light.specular", glm::vec3(basicParams.ls));
 
-      test->Draw();
+      ((CryptModel*)crypt)->DrawCrypt(projection, view, camera, lightPos, *uberShader); 
     }
 
     void DrawOcclusionScene()
@@ -164,6 +160,7 @@ class CryptScene : Scene
 
       // Material
       uberShader->setInt("material.diffuse", 0);
+      uberShader->setInt("normalMap", 1);
       uberShader->setFloat("material.shininess", 0.0f);
 
       // Light
@@ -172,9 +169,10 @@ class CryptScene : Scene
       uberShader->setVec3("light.diffuse", glm::vec3(0.0f));
       uberShader->setVec3("light.specular", glm::vec3(0.0f));
 
-      //crypt->Draw(projection, view, camera, lightPos, p, p); 
-      
-      test->Draw();
+      // Disable normal mapping
+      uberShader->setBool("hasNormalMap", false);
+
+      ((CryptModel*)crypt)->DrawCrypt(projection, view, camera, lightPos, *uberShader); 
     }
 
     void DrawLamp()
@@ -197,13 +195,7 @@ class CryptScene : Scene
 
       ImGui::Begin("Materials");
 
-        ImGui::Text("Normal Parameters");
-        ImGui::SliderFloat("Normal Light Ambient", &normalParams.la, 0.0f, 1.0f);
-        ImGui::SliderFloat("Normal Light Diffuse", &normalParams.ld, 0.0f, 1.0f);
-        ImGui::SliderFloat("Normal Light Specular", &normalParams.ls, 0.0f, 1.0f);
-        ImGui::SliderInt("Normal Shininess", &normalParams.s, 0.0f, 128.0f);
-
-        ImGui::Text("Basic Parameters");
+        ImGui::Text("Shader Parameters");
         ImGui::SliderFloat("Basic Light Ambient", &basicParams.la, 0.0f, 1.0f);
         ImGui::SliderFloat("Basic Light Diffuse", &basicParams.ld, 0.0f, 1.0f);
         ImGui::SliderFloat("Basic Light Specular", &basicParams.ls, 0.0f, 1.0f);
@@ -229,9 +221,8 @@ class CryptScene : Scene
         ImGui::SliderFloat("Density", &godraysParams.density, 0.0f, 1.0f);
         ImGui::SliderFloat("Weight", &godraysParams.weight, 0.0f, 10.0f);
 
-        if (ImGui::Button("Set Light Here"))
-          lightPos = camera.Position;
-        ImGui::Text("Light Pos = %.3f %.3f %.3f", lightPos.x, lightPos.y, lightPos.z);
+        if (ImGui::Button("Light follow camera"))
+          lightFollowCamera = !lightFollowCamera;
 
       ImGui::End();
 

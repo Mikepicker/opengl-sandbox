@@ -6,6 +6,12 @@
 
 #include <vector>
 
+struct ShaderParams
+{
+  float la, ld, ls; // Light Ambient/Diffuse/Specular
+  int s;            // Shininess
+};
+
 class Model
 {
   public:

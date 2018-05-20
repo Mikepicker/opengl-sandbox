@@ -82,7 +82,6 @@ static unsigned int loadTexture(char const * path)
 
 class Mesh {
   public:
-  /*  Mesh Data  */
     vector<Vertex> vertices;
     vector<unsigned int> indices;
     Material material;
@@ -90,25 +89,24 @@ class Mesh {
     unsigned int VAO;
     std::string name;
 
-    /*  Functions  */
-    // constructor
     Mesh(vector<Vertex> vertices, vector<unsigned int> indices, Material material)
     {
-        this->vertices = vertices;
-        this->indices = indices;
-        this->material = material;
+      this->vertices = vertices;
+      this->indices = indices;
+      this->material = material;
 
-        if (!material.texPath.empty())
-          diffuseMap = loadTexture(material.texPath.c_str());
+      if (!material.texPath.empty())
+        diffuseMap = loadTexture(material.texPath.c_str());
 
-        if (!material.normalPath.empty())
-        {
-          normalMap = loadTexture(material.normalPath.c_str());
-          computeTangents();
-        }
+      if (!material.normalPath.empty())
+      {
+        std::cout << "NRM " << material.normalPath << std::endl;
+        normalMap = loadTexture(material.normalPath.c_str());
+        computeTangents();
+      }
 
-        // now that we have all the required data, set the vertex buffers and its attribute pointers.
-        setupMesh();
+      // now that we have all the required data, set the vertex buffers and its attribute pointers.
+      setupMesh();
     }
 
     // Render the mesh
@@ -131,7 +129,6 @@ class Mesh {
       glBindVertexArray(VAO);
       glDrawElements(GL_TRIANGLES, indices.size(), GL_UNSIGNED_INT, 0);
       glBindVertexArray(0);
-
     }
 
 private:
@@ -206,13 +203,19 @@ private:
         tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
         tangent = glm::normalize(tangent);
 
-        v1.Tangent = tangent;
-        v2.Tangent = tangent;
-        v3.Tangent = tangent;
+        v1.Tangent += tangent;
+        v2.Tangent += tangent;
+        v3.Tangent += tangent;
 
         vertices[indices[i]] = v1;
         vertices[indices[i + 1]] = v2;
         vertices[indices[i + 2]] = v3;
+      }
+
+      // Normalize
+      for (unsigned int i = 0; i < indices.size(); i++)
+      {
+        vertices[indices[i]].Tangent = glm::normalize(vertices[indices[i]].Tangent);
       }
     }
 };

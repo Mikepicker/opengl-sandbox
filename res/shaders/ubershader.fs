@@ -2,10 +2,15 @@
 out vec4 FragColor;
 
 in VS_OUT {
-    vec3 FragPos;
-    vec3 Normal;
-    vec2 TexCoords;
-    vec4 FragPosLightSpace;
+  vec3 FragPos;
+  vec3 Normal;
+  vec2 TexCoords;
+  vec4 FragPosLightSpace;
+
+  // Normal mapping
+  vec3 TangentLightPos;
+  vec3 TangentViewPos;
+  vec3 TangentFragPos;
 } fs_in;
 
 struct Material {
@@ -29,6 +34,10 @@ uniform vec3 viewPos;
 uniform sampler2D shadowMap;
 uniform bool softShadows;
 
+// Normal mapping
+uniform bool hasNormalMap;
+uniform sampler2D normalMap;
+
 float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
 {
   // Perform perspective divide
@@ -50,7 +59,8 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
   {
     // Hard shadows
     shadow = currentDepth - bias > closestDepth  ? 1.0 : 0.0;
-  } else
+  }
+  else
   {
     // PCF for soft shadows
     vec2 texelSize = 1.0 / textureSize(shadowMap, 0);
@@ -69,10 +79,21 @@ float ShadowCalculation(vec4 fragPosLightSpace, vec3 normal, vec3 lightDir)
   return shadow;
 }
 
+vec3 computeNormal()
+{
+  // obtain normal from normal map in range [0,1]
+  vec3 normal = texture(normalMap, fs_in.TexCoords).rgb;
+
+  // transform normal vector to range [-1,1]
+  normal = normalize(normal * 2.0 - 1.0);  // this normal is in tangent space
+
+  return normal;
+}
+
 void main()
 {           
   vec3 color = texture(material.diffuse, fs_in.TexCoords).rgb;
-  vec3 normal = normalize(fs_in.Normal);
+  vec3 normal = hasNormalMap ? computeNormal() : normalize(fs_in.Normal);
 
   // Ambient
   vec3 ambient = light.ambient * color;

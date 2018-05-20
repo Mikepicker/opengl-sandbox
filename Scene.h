@@ -96,7 +96,15 @@ class Scene
       ImGui::StyleColorsDark();
     }
 
-    virtual void Draw() {}
+    virtual void Draw() {
+      // Per-frame time logic
+      float currentFrame = glfwGetTime();
+      deltaTime = currentFrame - lastFrame;
+      lastFrame = currentFrame;
+
+      // Input
+      processInput();
+    }
 
     void processInput()
     {
@@ -112,63 +120,6 @@ class Scene
       if (glfwGetKey(s_Window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
     }
-
-    // Generate and bind FBO
-    void generateFBORBO(unsigned int &framebuffer, unsigned int &texColorBuffer, unsigned int &rbo)
-    {
-      glGenFramebuffers(1, &framebuffer);
-      glBindFramebuffer(GL_FRAMEBUFFER, framebuffer);
-
-      // generate texture
-      glGenTextures(1, &texColorBuffer);
-      glBindTexture(GL_TEXTURE_2D, texColorBuffer);
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, s_WindowWidth/4, s_WindowHeight/4, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-      glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-      glBindTexture(GL_TEXTURE_2D, 0);
-
-      // attach it to currently bound framebuffer object
-      glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, texColorBuffer, 0);
-
-      // Generate and bind render buffer for depth and stencil tests
-      glGenRenderbuffers(1, &rbo);
-      glBindRenderbuffer(GL_RENDERBUFFER, rbo);
-      glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH24_STENCIL8, 800, 600);
-      glBindRenderbuffer(GL_RENDERBUFFER, 0);
-
-      // Attach rbo to fbo
-      glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_RENDERBUFFER, rbo);
-
-      // Check attachments and unbind fbo
-      if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    }
-
-    // Generate quad for post processing
-    void generateQuad(unsigned int &quadVAO, unsigned int &quadVBO)
-    {
-      float quadVertices[] = {
-        -1.0f, 1.0f,  0.0f, 1.0f,
-        -1.0f, -1.0f, 0.0f, 0.0f,
-        1.0f, -1.0f, 1.0f, 0.0f,
-        -1.0f, 1.0f,  0.0f, 1.0f,
-        1.0f, -1.0f, 1.0f, 0.0f,
-        1.0f, 1.0f,  1.0f, 1.0f
-      };
-      glGenVertexArrays(1, &quadVAO);
-      glGenBuffers(1, &quadVBO);
-      glBindVertexArray(quadVAO);
-      glBindBuffer(GL_ARRAY_BUFFER, quadVBO);
-      glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
-      glEnableVertexAttribArray(0);
-      glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)0);
-      glEnableVertexAttribArray(1);
-      glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 4 * sizeof(float), (void*)(2 * sizeof(float)));
-
-    }
-
-  protected:
 
     // timing
     float deltaTime = 0.0f;
