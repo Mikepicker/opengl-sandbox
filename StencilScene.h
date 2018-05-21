@@ -35,15 +35,7 @@ class StencilScene : public Scene
 
     void Draw()
     {
-      // per-frame time logic
-      // --------------------
-      float currentFrame = glfwGetTime();
-      deltaTime = currentFrame - lastFrame;
-      lastFrame = currentFrame;
-
-      // input
-      // -----
-      processInput();
+      Scene::Draw();
 
       // render
       // ------

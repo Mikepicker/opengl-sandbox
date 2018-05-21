@@ -47,13 +47,7 @@ class GodraysScene : public Scene
 
     void Draw()
     {
-      // Per-frame time logic
-      float currentFrame = glfwGetTime();
-      deltaTime = currentFrame - lastFrame;
-      lastFrame = currentFrame;
-
-      // Input
-      processInput();
+      Scene::Draw();
 
       // Draw GUI
       DrawGUI();

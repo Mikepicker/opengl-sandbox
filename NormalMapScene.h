@@ -25,13 +25,7 @@ class NormalMapScene : Scene
 
     void Draw()
     {
-      // Per-frame time logic
-      float currentFrame = glfwGetTime();
-      deltaTime = currentFrame - lastFrame;
-      lastFrame = currentFrame;
-
-      // Input
-      processInput();
+      Scene::Draw();
 
       // View/projection transformations
       projection = glm::perspective(glm::radians(camera.Zoom), (float)s_WindowWidth / (float)s_WindowHeight, 0.1f, 100.0f);

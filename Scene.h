@@ -13,6 +13,8 @@
 #include "dep/imgui/imgui_impl_glfw_gl3.h"
 
 #include "Camera.h"
+#include "Godrays.h"
+#include "ShadowMap.h"
 
 // Static variables for GLFW (they must be updated by GLFW callbacks!)
 GLFWwindow* s_Window;
@@ -67,6 +69,12 @@ static void mouse_button_callback(GLFWwindow* window, int button, int action, in
   }
 }
 
+enum ShaderMode
+{
+  NORMAL = 0,
+  OCCLUSION = 1
+};
+
 class Scene
 {
   public:
@@ -94,6 +102,27 @@ class Scene
       ImGui_ImplGlfwGL3_Init(window, false);
 
       ImGui::StyleColorsDark();
+
+      // Load shaders
+      m_LampShader = new Shader("res/shaders/basic/lamp.vs", "res/shaders/basic/lamp.fs");
+      m_UberShader = new Shader("res/shaders/ubershader.vs", "res/shaders/ubershader.fs");
+
+      // Load lamp model
+      m_Lamp = new Model("res/models/cube.obj");
+
+      // ShadowMap
+      m_ShadowMap = new ShadowMap(width, height);
+
+      // Godrays
+      m_Godrays = new Godrays(s_WindowWidth, s_WindowHeight);
+      m_GodraysParams.exposure = 0.0034f;
+      m_GodraysParams.decay = 1.0f;
+      m_GodraysParams.density = 0.84f;
+      m_GodraysParams.weight = 3.65f;
+
+      // OpenGL settings
+      glEnable(GL_DEPTH_TEST);
+      //glEnable(GL_CULL_FACE);
     }
 
     virtual void Draw() {
@@ -104,9 +133,82 @@ class Scene
 
       // Input
       processInput();
+
+      // Projection - View matrices
+      m_Projection = glm::perspective(glm::radians(camera.Zoom), (float)s_WindowWidth / (float)s_WindowHeight, 0.1f, 100.0f);
+      m_View = camera.GetViewMatrix();
     }
 
-    void processInput()
+    void SetShaderParams(ShaderParams params)
+    {
+      m_UberShader->use();
+      m_UberShader->setMat4("projection", m_Projection);
+      m_UberShader->setMat4("view", m_View);
+      m_UberShader->setMat4("model", glm::mat4());
+
+      // Shadows
+      m_UberShader->setBool("softShadows", m_SoftShadows);
+      m_UberShader->setInt("shadowMap", 2);
+
+      // Set light uniforms
+      m_UberShader->setVec3("viewPos", camera.Position);
+      m_UberShader->setVec3("lightPos", m_LightPos);
+      m_UberShader->setMat4("lightSpaceMatrix", m_ShadowMap->lightSpaceMatrix);
+
+      // Material
+      m_UberShader->setInt("material.diffuse", 0);
+      m_UberShader->setInt("normalMap", 1);
+      m_UberShader->setFloat("material.shininess", params.s);
+
+      // Light
+      m_UberShader->setVec3("light.position", m_LightPos);
+      m_UberShader->setVec3("light.ambient", glm::vec3(params.la));
+      m_UberShader->setVec3("light.diffuse", glm::vec3(params.ld));
+      m_UberShader->setVec3("light.specular", glm::vec3(params.ls));
+    }
+
+  protected:
+    // Timing
+    float deltaTime = 0.0f;
+    float lastFrame = 0.0f;
+    
+    // Lighting
+    glm::vec3 m_LightPos = glm::vec3(3.0f, 6.5f, -14.5f);
+    Model* m_Lamp;
+
+    // Shaders
+    Shader* m_LampShader;
+    Shader* m_UberShader;
+
+    // Matrices
+    glm::mat4 m_View;
+    glm::mat4 m_Projection;
+
+    // Features
+    Godrays* m_Godrays;
+    GodraysParams m_GodraysParams;
+    ShadowMap* m_ShadowMap;
+
+    // Toggle features
+    bool m_GodraysEnabled;
+    bool m_Shadows;
+    bool m_SoftShadows;
+
+    void DrawLamp()
+    {
+      m_LampShader->use();
+      m_LampShader->setMat4("projection", m_Projection);
+      m_LampShader->setMat4("view", m_View);
+      glm::mat4 model = glm::mat4();
+      model = glm::translate(model, m_LightPos);
+      model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
+      m_LampShader->setMat4("model", model);
+
+      m_Lamp->Draw();
+    }
+
+  private:
+    void processInput() const
     {
       if (glfwGetKey(s_Window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(s_Window, true);
@@ -120,11 +222,6 @@ class Scene
       if (glfwGetKey(s_Window, GLFW_KEY_D) == GLFW_PRESS)
         camera.ProcessKeyboard(RIGHT, deltaTime);
     }
-
-    // timing
-    float deltaTime = 0.0f;
-    float lastFrame = 0.0f;
-
 };
 
 #endif
