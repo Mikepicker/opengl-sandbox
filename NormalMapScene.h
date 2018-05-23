@@ -38,6 +38,7 @@ class NormalMapScene : Scene
       //lightPos = camera.Position;
       lightPos.x = sin(glfwGetTime()) * 2;
       lightPos.z = cos(glfwGetTime()) * 2;
+      //lightPos = camera.Position;
 
       // Set uniforms
       glm::mat4 model;
@@ -53,9 +54,28 @@ class NormalMapScene : Scene
       nmShader->setVec3("light.diffuse", glm::vec3(0.5f));
       nmShader->setVec3("light.specular", glm::vec3(0.0f));
       nmShader->setFloat("shininess", 32.0f);
-
-      // Draw cube model
       cube->Draw(); 
+
+      model = glm::translate(glm::mat4(), glm::vec3(-2.0f, -2.0f, 0.0f));
+      nmShader->setMat4("model", model);
+      cube->Draw();
+
+      model = glm::translate(glm::mat4(), glm::vec3(0.0f, -2.0f, 0.0f));
+      nmShader->setMat4("model", model);
+      cube->Draw();
+
+      model = glm::translate(glm::mat4(), glm::vec3(2.0f, -2.0f, 0.0f));
+      nmShader->setMat4("model", model);
+      cube->Draw();
+
+      model = glm::translate(glm::mat4(), glm::vec3(-2.0f, 0.0f, 0.0f));
+      nmShader->setMat4("model", model);
+      cube->Draw();
+
+
+      model = glm::translate(glm::mat4(), glm::vec3(2.0f, 0.0f, 0.0f));
+      nmShader->setMat4("model", model);
+      cube->Draw();
 
       DrawLamp();
     }

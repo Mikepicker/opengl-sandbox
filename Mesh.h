@@ -100,7 +100,6 @@ class Mesh {
 
       if (!material.normalPath.empty())
       {
-        std::cout << "NRM " << material.normalPath << std::endl;
         normalMap = loadTexture(material.normalPath.c_str());
         computeTangents();
       }
@@ -184,10 +183,13 @@ private:
         v2 = vertices[indices[i + 1]];
         v3 = vertices[indices[i + 2]];
 
-        glm::vec2 uv1(0.0f, 1.0f);
+        /*glm::vec2 uv1(0.0f, 1.0f);
         glm::vec2 uv2(0.0f, 0.0f);
         glm::vec2 uv3(1.0f, 0.0f);  
-        glm::vec2 uv4(1.0f, 1.0f);
+        glm::vec2 uv4(1.0f, 1.0f);*/
+        glm::vec2 uv1 = v1.TexCoords;
+        glm::vec2 uv2 = v2.TexCoords;
+        glm::vec2 uv3 = v3.TexCoords;
 
         glm::vec3 tangent;
 
@@ -203,9 +205,9 @@ private:
         tangent.z = f * (deltaUV2.y * edge1.z - deltaUV1.y * edge2.z);
         tangent = glm::normalize(tangent);
 
-        v1.Tangent += tangent;
-        v2.Tangent += tangent;
-        v3.Tangent += tangent;
+        v1.Tangent = tangent;
+        v2.Tangent = tangent;
+        v3.Tangent = tangent;
 
         vertices[indices[i]] = v1;
         vertices[indices[i + 1]] = v2;

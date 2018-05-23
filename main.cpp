@@ -11,12 +11,14 @@
 #include "TerrainScene.h"
 #include "NormalMapScene.h"
 #include "CryptScene.h"
+#include "BloomScene.h"
+#include "SponzaScene.h"
 
 #define print(s) std::cout << s << std::endl;
 
 // settings
-const unsigned int SCR_WIDTH = 1280;
-const unsigned int SCR_HEIGHT = 720;
+const unsigned int SCR_WIDTH = 800;
+const unsigned int SCR_HEIGHT = 600;
 
 int main()
 {
@@ -49,7 +51,9 @@ int main()
   //GodraysScene scene(window, SCR_WIDTH, SCR_HEIGHT);
   //TerrainScene scene(window, SCR_WIDTH, SCR_HEIGHT);
   //NormalMapScene scene(window, SCR_WIDTH, SCR_HEIGHT);
-  CryptScene scene(window, SCR_WIDTH, SCR_HEIGHT);
+  //CryptScene scene(window, SCR_WIDTH, SCR_HEIGHT);
+  //BloomScene scene(window, SCR_WIDTH, SCR_HEIGHT);
+  SponzaScene scene(window, SCR_WIDTH, SCR_HEIGHT);
 
   std::cout << glfwGetVersionString() << std::endl;
 

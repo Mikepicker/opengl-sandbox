@@ -31,22 +31,24 @@ static void printIndices(std::vector<unsigned int>& indices)
     std::cout << indices[i] << std::endl;
 }
 
+
+
 class OBJImporter
 {
   public:
+    std::vector<glm::vec3> temp_vertices;
+    std::vector<glm::vec2> temp_uvs;
+    std::vector<glm::vec3> temp_normals;
+
+    std::vector<Vertex> vertices;
+    std::vector<unsigned int> indices;
+
+    std::unordered_map<std::string, unsigned int> verticesMap;
+
+    std::unordered_map<std::string, Material> materialMap;
+
     void importOBJ(const char* filename, std::vector<Mesh>& meshes)
     {
-      std::vector<glm::vec3> temp_vertices;
-      std::vector<glm::vec2> temp_uvs;
-      std::vector<glm::vec3> temp_normals;
-      
-      std::vector<Vertex> vertices;
-      std::vector<unsigned int> indices;
-
-      std::unordered_map<std::string, unsigned int> verticesMap;
-
-      std::unordered_map<std::string, Material> materialMap;
-
       std::ifstream in(filename, std::ifstream::in);
       if (!in)
       {
@@ -89,72 +91,52 @@ class OBJImporter
         }
         else if (line.substr(0,2) == "f ")
         {
-          unsigned int v1, v2, v3;
-          unsigned int vt1, vt2, vt3;
-          unsigned int vn1, vn2, vn3;
+          unsigned int v1, v2, v3, v4;
+          unsigned int vt1, vt2, vt3, vt4;
+          unsigned int vn1, vn2, vn3, vn4;
 
           bool hasUV = true;
+          bool done = false;
+
+          // v1/v2/v3/v4
+          int matches = sscanf(line.c_str(), "f %u/%u/%u %u/%u/%u %u/%u/%u %u/%u/%u", &v1, &vt1, &vn1, &v2, &vt2, &vn2, &v3, &vt3, &vn3, &v4, &vt4, &vn4);
+          if (matches == 12)
+          {
+            done = true;
+            pushVertex(v1, vt1, vn1, hasUV);
+            pushVertex(v2, vt2, vn2, hasUV);
+            pushVertex(v3, vt3, vn3, hasUV);
+            pushVertex(v1, vt1, vn1, hasUV);
+            pushVertex(v3, vt3, vn3, hasUV);
+            pushVertex(v4, vt4, vn4, hasUV);
+          }
 
           // v1/v2/v3
-          int matches = sscanf(line.c_str(), "f %u/%u/%u %u/%u/%u %u/%u/%u", &v1, &vt1, &vn1, &v2, &vt2, &vn2, &v3, &vt3, &vn3);
-          if (matches != 9)
+          matches = sscanf(line.c_str(), "f %u/%u/%u %u/%u/%u %u/%u/%u", &v1, &vt1, &vn1, &v2, &vt2, &vn2, &v3, &vt3, &vn3);
+          if (matches == 9 && !done)
           {
-            // v1//vn1
-            matches = sscanf(line.c_str(), "f %u//%u %u//%u %u//%u", &v1, &vn1, &v2, &vn2, &v3, &vn3);
-            if (matches != 6) {
-              std::cout << "Unsupported file!\n" << std::endl;
-              return;
-            }
+            done = true;
+            pushVertex(v1, vt1, vn1, hasUV);
+            pushVertex(v2, vt2, vn2, hasUV);
+            pushVertex(v3, vt3, vn3, hasUV);
+          }
 
+          // v1//vn1
+          matches = sscanf(line.c_str(), "f %u//%u %u//%u %u//%u", &v1, &vn1, &v2, &vn2, &v3, &vn3);
+          if (matches == 6 && !done)
+          {
+            done = true;
             hasUV = false;
+            pushVertex(v1, vt1, vn1, hasUV);
+            pushVertex(v2, vt2, vn2, hasUV);
+            pushVertex(v3, vt3, vn3, hasUV);
           }
 
-          v1--; v2--; v3--;
-          vt1--; vt2--; vt3--;
-          vn1--; vn2--; vn3--;
-
-          Vertex vertex1; 
-          vertex1.Position = temp_vertices[v1];
-          vertex1.TexCoords = hasUV ? temp_uvs[vt1] : glm::vec3(0.0f);
-          vertex1.Normal = temp_normals[vn1];
-
-          Vertex vertex2; 
-          vertex2.Position = temp_vertices[v2];
-          vertex2.TexCoords = hasUV ? temp_uvs[vt2] : glm::vec3(0.0f);
-          vertex2.Normal = temp_normals[vn2];
-
-          Vertex vertex3; 
-          vertex3.Position = temp_vertices[v3];
-          vertex3.TexCoords = hasUV ? temp_uvs[vt3] : glm::vec3(0.0f);
-          vertex3.Normal = temp_normals[vn3];
-
-          vertex1.TexCoords.y = 1 - vertex1.TexCoords.y;
-          vertex2.TexCoords.y = 1 - vertex2.TexCoords.y;
-          vertex3.TexCoords.y = 1 - vertex3.TexCoords.y;
-
-          std::string k1 = std::to_string(v1) + "/" + std::to_string(vt1) + "/" + std::to_string(vn1); 
-          std::string k2 = std::to_string(v2) + "/" + std::to_string(vt2) + "/" + std::to_string(vn2); 
-          std::string k3 = std::to_string(v3) + "/" + std::to_string(vt3) + "/" + std::to_string(vn3); 
-
-          if (verticesMap.find(k1) == verticesMap.end())
+          if (!done)
           {
-            vertices.push_back(vertex1);
-            verticesMap[k1] = vertices.size()-1; 
+            std::cout << "Unsupported file!\n" << std::endl;
+            return;
           }
-          if (verticesMap.find(k2) == verticesMap.end())
-          {
-            vertices.push_back(vertex2);
-            verticesMap[k2] = vertices.size()-1; 
-          }
-          if (verticesMap.find(k3) == verticesMap.end())
-          {
-            vertices.push_back(vertex3);
-            verticesMap[k3] = vertices.size()-1; 
-          }
-
-          indices.push_back(verticesMap[k1]);
-          indices.push_back(verticesMap[k2]);
-          indices.push_back(verticesMap[k3]);
         }
         else if (line.substr(0,7) == "mtllib ")
         {
@@ -170,7 +152,7 @@ class OBJImporter
           std::istringstream s(line.substr(7));
           s >> currentMtl;
         }
-        else if (line.substr(0,2) == "o ")
+        else if (line.substr(0,2) == "o " || line.substr(0,2) == "g ")
         {
           if (!firstMesh) {
             Mesh mesh(vertices, indices, materialMap[currentMtl]);
@@ -239,6 +221,30 @@ class OBJImporter
       }
 
       mtlMap[currentMtl.name] = currentMtl;
+    }
+
+    void pushVertex(unsigned int v, unsigned int vt, unsigned int vn, bool hasUV)
+    {
+      v--;
+      vt--;
+      vn--;
+
+      Vertex vertex; 
+      vertex.Position = temp_vertices[v];
+      vertex.TexCoords = hasUV ? temp_uvs[vt] : glm::vec3(0.0f);
+      vertex.Normal = temp_normals[vn];
+
+      vertex.TexCoords.y = 1 - vertex.TexCoords.y;
+
+      std::string k = std::to_string(v) + "/" + std::to_string(vt) + "/" + std::to_string(vn); 
+
+      if (verticesMap.find(k) == verticesMap.end())
+      {
+        vertices.push_back(vertex);
+        verticesMap[k] = vertices.size()-1; 
+      }
+
+      indices.push_back(verticesMap[k]);
     }
 };
 #endif
