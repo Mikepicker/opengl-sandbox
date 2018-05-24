@@ -95,6 +95,8 @@ class Mesh {
       this->indices = indices;
       this->material = material;
 
+      //std::cout << "TEX" << material.texPath << std::endl;
+
       if (!material.texPath.empty())
         diffuseMap = loadTexture(material.texPath.c_str());
 

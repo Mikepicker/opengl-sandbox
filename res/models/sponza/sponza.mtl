@@ -78,6 +78,8 @@ Ks 0.0000 0.0000 0.0000
 Ke 0.0000 0.0000 0.0000
 #map_Ka /home/mike/gamedev/cg/res/models/sponza/textures/gi_flag.tga
 #map_Kd /home/mike/gamedev/cg/res/models/sponza/textures/gi_flag.tga
+map_Ka /home/mike/gamedev/cg/res/models/sponza/textures/sponza_fabric_diff.tga
+map_Kd /home/mike/gamedev/cg/res/models/sponza/textures/sponza_fabric_diff.tga
 
 newmtl bricks
 Ns 10.0000
@@ -92,7 +94,7 @@ Ks 0.0000 0.0000 0.0000
 Ke 0.0000 0.0000 0.0000
 map_Ka /home/mike/gamedev/cg/res/models/sponza/textures/spnza_bricks_a_diff.tga
 map_Kd /home/mike/gamedev/cg/res/models/sponza/textures/spnza_bricks_a_diff.tga
-map_bump /home/mike/gamedev/cg/res/models/sponza/textures/spnza_bricks_a_diff.tga
+map_bump /home/mike/gamedev/cg/res/models/sponza/textures/spnza_bricks_a_ddn.tga
 bump /home/mike/gamedev/cg/res/models/sponza/textures/spnza_bricks_a_diff.tga
 
 newmtl arch

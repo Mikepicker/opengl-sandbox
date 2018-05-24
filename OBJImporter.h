@@ -149,11 +149,6 @@ class OBJImporter
         }
         else if (line.substr(0,7) == "usemtl ")
         {
-          std::istringstream s(line.substr(7));
-          s >> currentMtl;
-        }
-        else if (line.substr(0,2) == "o " || line.substr(0,2) == "g ")
-        {
           if (!firstMesh) {
             Mesh mesh(vertices, indices, materialMap[currentMtl]);
             mesh.name = currentObj;
@@ -164,7 +159,12 @@ class OBJImporter
 
           firstMesh = false;
 
-          currentMtl = "";
+          std::istringstream s(line.substr(7));
+          s >> currentMtl;
+        }
+        else if (line.substr(0,2) == "o " || line.substr(0,2) == "g ")
+        {
+          //currentMtl = "";
           std::istringstream s(line.substr(2));
           s >> currentObj;
         }

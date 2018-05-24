@@ -135,7 +135,7 @@ class Scene
       processInput();
 
       // Projection - View matrices
-      m_Projection = glm::perspective(glm::radians(camera.Zoom), (float)s_WindowWidth / (float)s_WindowHeight, 0.1f, 100.0f);
+      m_Projection = glm::perspective(glm::radians(camera.Zoom), (float)s_WindowWidth / (float)s_WindowHeight, 0.1f, 1000.0f);
       m_View = camera.GetViewMatrix();
 
       glClearColor(0.1f, 0.1f, 0.1f, 1.0f);

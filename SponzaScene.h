@@ -26,9 +26,10 @@ class SponzaScene : public Scene
 
       SetShaderParams(shaderParams);
       glm::mat4 model;
-      model = glm::scale(model, glm::vec3(0.005f));
+      model = glm::scale(model, glm::vec3(0.05f));
       m_UberShader->setMat4("model", model);
       m_UberShader->setBool("hasNormalMap", normalsEnabled);
+      m_UberShader->setBool("hasShadows", false);
 
       sponza->Draw();
 
@@ -55,6 +56,11 @@ class SponzaScene : public Scene
         ImGui::SliderFloat("Basic Light Diffuse", &shaderParams.ld, 0.0f, 1.0f);
         ImGui::SliderFloat("Basic Light Specular", &shaderParams.ls, 0.0f, 1.0f);
         ImGui::SliderInt("Basic Shininess", &shaderParams.s, 0.0f, 128.0f);
+
+        if (ImGui::Button("Compile Shader"))
+        {
+          m_UberShader = new Shader("res/shaders/ubershader.vs", "res/shaders/ubershader.fs");
+        }
 
         if (ImGui::Button("Toggle Normals"))
           normalsEnabled = !normalsEnabled;

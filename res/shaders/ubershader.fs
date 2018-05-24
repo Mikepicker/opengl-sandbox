@@ -33,6 +33,7 @@ uniform vec3 viewPos;
 // Shadows
 uniform sampler2D shadowMap;
 uniform bool softShadows;
+uniform bool hasShadows;
 
 // Normal mapping
 uniform bool hasNormalMap;
@@ -99,20 +100,21 @@ void main()
   vec3 ambient = light.ambient * color;
 
   // Diffuse
-  vec3 lightDir = normalize(light.position - fs_in.FragPos);
+  vec3 lightDir = hasNormalMap ? normalize(fs_in.TangentLightPos - fs_in.TangentFragPos) : normalize(light.position - fs_in.FragPos);
   float diff = max(dot(lightDir, normal), 0.0);
   vec3 diffuse = diff * light.diffuse;
 
   // Specular
-  vec3 viewDir = normalize(viewPos - fs_in.FragPos);
+  vec3 viewDir = hasNormalMap ? normalize(fs_in.TangentViewPos - fs_in.TangentFragPos) : normalize(viewPos - fs_in.FragPos);
   float spec = 0.0;
   vec3 halfwayDir = normalize(lightDir + viewDir);  
   spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess);
   vec3 specular = spec * light.specular;    
 
   // Calculate shadow
-  float shadow = ShadowCalculation(fs_in.FragPosLightSpace, normal, lightDir);       
+  float shadow = hasShadows ? ShadowCalculation(fs_in.FragPosLightSpace, normal, lightDir) : 0.0;
   vec3 lighting = (ambient + (1.0 - shadow) * (diffuse + specular)) * color;    
   
   FragColor = vec4(lighting, 1.0);
+  //FragColor = vec4(texture(normalMap, fs_in.TexCoords).rgb, 1.0);
 }
