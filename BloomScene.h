@@ -115,7 +115,7 @@ class BloomScene : public Scene
 
       model = glm::translate(model, glm::vec3(0.0f, 1.5f, 0.0));
       shader->setMat4("model", model);
-      monkey->Draw();
+      monkey->Draw(*shader);
 
       //DrawLamp();
 
@@ -131,7 +131,7 @@ class BloomScene : public Scene
         model = glm::scale(model, glm::vec3(0.25f));
         shaderLight->setMat4("model", model);
         shaderLight->setVec3("lightColor", lightColors[i]);
-        m_Lamp->Draw();
+        m_Lamp->Draw(*shaderLight);
       }
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

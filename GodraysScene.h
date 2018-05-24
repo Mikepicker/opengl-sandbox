@@ -63,7 +63,7 @@ class GodraysScene : public Scene
 
       // Draw model
       SetShaderParams(true); 
-      tower->Draw();
+      tower->Draw(*modelShader);
 
       // Draw lamp
       DrawLamp();
@@ -77,7 +77,7 @@ class GodraysScene : public Scene
 
       // Draw model
       SetShaderParams(false); 
-      tower->Draw();
+      tower->Draw(*modelShader);
 
       // Draw lamp
       DrawLamp();
@@ -160,7 +160,7 @@ class GodraysScene : public Scene
       model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
       lampShader->setMat4("model", model);
 
-      lamp->Draw();
+      lamp->Draw(*lampShader);
     }
 
   private:

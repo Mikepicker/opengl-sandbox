@@ -40,6 +40,9 @@ struct Material {
   string name;
   string texPath;
   string normalPath;
+  glm::vec3 ambient = glm::vec3(1.0f, 1.0f, 1.0f);
+  glm::vec3 diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
+  glm::vec3 specular = glm::vec3(1.0f, 1.0f, 1.0f);
 };
 
 // Utility function for loading a 2D texture from file
@@ -111,7 +114,7 @@ class Mesh {
     }
 
     // Render the mesh
-    void Draw()
+    void Draw(Shader& shader)
     {
       // Bind textures
       if (!material.texPath.empty())
@@ -125,6 +128,11 @@ class Mesh {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, normalMap);
       }
+
+      // Set material params
+      shader.setVec3("material.ambient", material.ambient);
+      shader.setVec3("material.diffuse", material.diffuse);
+      shader.setVec3("material.specular", material.specular);
 
       // Draw mesh
       glBindVertexArray(VAO);

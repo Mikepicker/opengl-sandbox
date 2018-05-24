@@ -159,7 +159,7 @@ class Scene
       m_UberShader->setMat4("lightSpaceMatrix", m_ShadowMap->lightSpaceMatrix);
 
       // Material
-      m_UberShader->setInt("material.diffuse", 0);
+      m_UberShader->setInt("material.diffuseMap", 0);
       m_UberShader->setInt("normalMap", 1);
       m_UberShader->setFloat("material.shininess", params.s);
 
@@ -207,7 +207,7 @@ class Scene
       model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
       m_LampShader->setMat4("model", model);
 
-      m_Lamp->Draw();
+      m_Lamp->Draw(*m_LampShader);
     }
 
   private:

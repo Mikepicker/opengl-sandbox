@@ -64,7 +64,7 @@ class ShadowMap
       glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
         glCullFace(GL_FRONT); // Avoid Peter-Panning
-        model.Draw();
+        model.Draw(*shadowDepthShader);
         glCullFace(GL_BACK);
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
 

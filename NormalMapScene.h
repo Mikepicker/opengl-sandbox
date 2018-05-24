@@ -54,28 +54,28 @@ class NormalMapScene : Scene
       nmShader->setVec3("light.diffuse", glm::vec3(0.5f));
       nmShader->setVec3("light.specular", glm::vec3(0.0f));
       nmShader->setFloat("shininess", 32.0f);
-      cube->Draw(); 
+      cube->Draw(*nmShader); 
 
       model = glm::translate(glm::mat4(), glm::vec3(-2.0f, -2.0f, 0.0f));
       nmShader->setMat4("model", model);
-      cube->Draw();
+      cube->Draw(*nmShader);
 
       model = glm::translate(glm::mat4(), glm::vec3(0.0f, -2.0f, 0.0f));
       nmShader->setMat4("model", model);
-      cube->Draw();
+      cube->Draw(*nmShader);
 
       model = glm::translate(glm::mat4(), glm::vec3(2.0f, -2.0f, 0.0f));
       nmShader->setMat4("model", model);
-      cube->Draw();
+      cube->Draw(*nmShader);
 
       model = glm::translate(glm::mat4(), glm::vec3(-2.0f, 0.0f, 0.0f));
       nmShader->setMat4("model", model);
-      cube->Draw();
+      cube->Draw(*nmShader);
 
 
       model = glm::translate(glm::mat4(), glm::vec3(2.0f, 0.0f, 0.0f));
       nmShader->setMat4("model", model);
-      cube->Draw();
+      cube->Draw(*nmShader);
 
       DrawLamp();
     }
@@ -107,7 +107,7 @@ class NormalMapScene : Scene
       model = glm::scale(model, glm::vec3(0.2f)); // a smaller cube
       lampShader->setMat4("model", model);
 
-      lamp->Draw();
+      lamp->Draw(*lampShader);
     }
 };
 

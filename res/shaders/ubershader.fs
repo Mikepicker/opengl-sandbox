@@ -14,7 +14,10 @@ in VS_OUT {
 } fs_in;
 
 struct Material {
-  sampler2D diffuse;
+  sampler2D diffuseMap;
+  vec3 ambient;
+  vec3 diffuse;
+  vec3 specular;
   float shininess;
 };
 
@@ -93,23 +96,23 @@ vec3 computeNormal()
 
 void main()
 {           
-  vec3 color = texture(material.diffuse, fs_in.TexCoords).rgb;
+  vec3 color = texture(material.diffuseMap, fs_in.TexCoords).rgb;
   vec3 normal = hasNormalMap ? computeNormal() : normalize(fs_in.Normal);
 
   // Ambient
-  vec3 ambient = light.ambient * color;
+  vec3 ambient = material.ambient * light.ambient * color;
 
   // Diffuse
   vec3 lightDir = hasNormalMap ? normalize(fs_in.TangentLightPos - fs_in.TangentFragPos) : normalize(light.position - fs_in.FragPos);
   float diff = max(dot(lightDir, normal), 0.0);
-  vec3 diffuse = diff * light.diffuse;
+  vec3 diffuse = diff * material.diffuse * light.diffuse;
 
   // Specular
   vec3 viewDir = hasNormalMap ? normalize(fs_in.TangentViewPos - fs_in.TangentFragPos) : normalize(viewPos - fs_in.FragPos);
   float spec = 0.0;
   vec3 halfwayDir = normalize(lightDir + viewDir);  
   spec = pow(max(dot(normal, halfwayDir), 0.0), material.shininess);
-  vec3 specular = spec * light.specular;    
+  vec3 specular = spec * material.specular * light.specular;    
 
   // Calculate shadow
   float shadow = hasShadows ? ShadowCalculation(fs_in.FragPosLightSpace, normal, lightDir) : 0.0;

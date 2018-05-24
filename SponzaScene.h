@@ -31,7 +31,7 @@ class SponzaScene : public Scene
       m_UberShader->setBool("hasNormalMap", normalsEnabled);
       m_UberShader->setBool("hasShadows", false);
 
-      sponza->Draw();
+      sponza->Draw(*m_UberShader);
 
       skybox->Draw(m_Projection, m_View);
 

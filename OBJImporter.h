@@ -215,6 +215,27 @@ class OBJImporter
           std::istringstream s(line.substr(9));
           s >> currentMtl.normalPath;
         }
+        else if (line.substr(0, 3) == "Ka ")
+        {
+          float r, g, b;
+          int matches = sscanf(line.c_str(), "Ka %f/%f/%f", &r, &g, &b);
+          if (matches == 3)
+            currentMtl.ambient = glm::vec3(r, g, b);
+        }
+        else if (line.substr(0, 3) == "Kd ")
+        {
+          float r, g, b;
+          int matches = sscanf(line.c_str(), "Kd %f/%f/%f", &r, &g, &b);
+          if (matches == 3)
+            currentMtl.diffuse = glm::vec3(r, g, b);
+        }
+        else if (line.substr(0, 3) == "Ks ")
+        {
+          float r, g, b;
+          int matches = sscanf(line.c_str(), "Ks %f/%f/%f", &r, &g, &b);
+          if (matches == 3)
+            currentMtl.specular = glm::vec3(r, g, b);
+        }
         else if (line[0] == '#')
         {
         }

@@ -25,7 +25,7 @@ class CryptModel : public Model
         // Draw wall meshes
         uberShader.setBool("hasNormalMap", !it->material.normalPath.empty());
         
-        it->Draw();
+        it->Draw(uberShader);
       }
     }
 
