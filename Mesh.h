@@ -14,8 +14,11 @@
 #include <sstream>
 #include <iostream>
 #include <vector>
+#include <unordered_map>
 
 using namespace std;
+
+static unordered_map<std::string, unsigned int> texturesMap;
 
 struct Vertex {
   // position
@@ -40,6 +43,8 @@ struct Material {
   string name;
   string texPath;
   string normalPath;
+  string specularPath;
+  string maskPath;
   glm::vec3 ambient = glm::vec3(1.0f, 1.0f, 1.0f);
   glm::vec3 diffuse = glm::vec3(1.0f, 1.0f, 1.0f);
   glm::vec3 specular = glm::vec3(1.0f, 1.0f, 1.0f);
@@ -48,6 +53,9 @@ struct Material {
 // Utility function for loading a 2D texture from file
 static unsigned int loadTexture(char const * path)
 {
+  if (texturesMap.find(std::string(path)) != texturesMap.end())
+    return texturesMap[std::string(path)];
+
   unsigned int textureID;
   glGenTextures(1, &textureID);
 
@@ -58,6 +66,8 @@ static unsigned int loadTexture(char const * path)
     GLenum format;
     if (nrComponents == 1)
       format = GL_RED;
+    if (nrComponents == 2)
+      format = GL_ALPHA;
     else if (nrComponents == 3)
       format = GL_RGB;
     else if (nrComponents == 4)
@@ -80,6 +90,7 @@ static unsigned int loadTexture(char const * path)
     stbi_image_free(data);
   }
 
+  texturesMap[std::string(path)] = textureID;
   return textureID;
 }
 
@@ -88,7 +99,7 @@ class Mesh {
     vector<Vertex> vertices;
     vector<unsigned int> indices;
     Material material;
-    unsigned int diffuseMap, normalMap;
+    unsigned int diffuseMap, normalMap, maskMap, specularMap;
     unsigned int VAO;
     std::string name;
 
@@ -98,7 +109,9 @@ class Mesh {
       this->indices = indices;
       this->material = material;
 
-      //std::cout << "TEX" << material.texPath << std::endl;
+      std::cout << "TEX" << material.texPath << std::endl;
+      std::cout << "NRM" << material.normalPath << std::endl;
+      std::cout << "MSK" << material.maskPath << std::endl;
 
       if (!material.texPath.empty())
         diffuseMap = loadTexture(material.texPath.c_str());
@@ -108,6 +121,12 @@ class Mesh {
         normalMap = loadTexture(material.normalPath.c_str());
         computeTangents();
       }
+
+      if (!material.specularPath.empty())
+        specularMap = loadTexture(material.specularPath.c_str());
+
+      if (!material.maskPath.empty())
+        maskMap = loadTexture(material.maskPath.c_str());
 
       // now that we have all the required data, set the vertex buffers and its attribute pointers.
       setupMesh();
@@ -123,10 +142,28 @@ class Mesh {
         glBindTexture(GL_TEXTURE_2D, diffuseMap);
       }
 
+      shader.setBool("hasNormalMap", false);
       if (!material.normalPath.empty())
       {
         glActiveTexture(GL_TEXTURE1);
         glBindTexture(GL_TEXTURE_2D, normalMap);
+        shader.setBool("hasNormalMap", true);
+      }
+
+      shader.setBool("hasSpecularMap", false);
+      if (!material.maskPath.empty())
+      {
+        glActiveTexture(GL_TEXTURE2);
+        glBindTexture(GL_TEXTURE_2D, specularMap);
+        shader.setBool("hasSpecularMap", true);
+      }
+
+      shader.setBool("hasMaskMap", false);
+      if (!material.maskPath.empty())
+      {
+        glActiveTexture(GL_TEXTURE3);
+        glBindTexture(GL_TEXTURE_2D, maskMap);
+        shader.setBool("hasMaskMap", true);
       }
 
       // Set material params

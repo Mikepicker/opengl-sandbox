@@ -123,6 +123,8 @@ class Scene
       // OpenGL settings
       glEnable(GL_DEPTH_TEST);
       //glEnable(GL_CULL_FACE);
+      glEnable(GL_BLEND);
+      glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     }
 
     virtual void Draw() {
@@ -151,7 +153,7 @@ class Scene
 
       // Shadows
       m_UberShader->setBool("softShadows", m_SoftShadows);
-      m_UberShader->setInt("shadowMap", 2);
+      m_UberShader->setInt("shadowMap", 4);
 
       // Set light uniforms
       m_UberShader->setVec3("viewPos", camera.Position);
@@ -161,6 +163,8 @@ class Scene
       // Material
       m_UberShader->setInt("material.diffuseMap", 0);
       m_UberShader->setInt("normalMap", 1);
+      m_UberShader->setInt("specularMap", 2);
+      m_UberShader->setInt("maskMap", 3);
       m_UberShader->setFloat("material.shininess", params.s);
 
       // Light

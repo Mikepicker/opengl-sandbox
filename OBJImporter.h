@@ -210,10 +210,20 @@ class OBJImporter
           std::istringstream s(line.substr(7));
           s >> currentMtl.texPath;
         }
+        else if (line.substr(0, 7) == "map_Ks ")
+        {
+          std::istringstream s(line.substr(7));
+          s >> currentMtl.specularPath;
+        }
         else if (line.substr(0, 9) == "map_bump ")
         {
           std::istringstream s(line.substr(9));
           s >> currentMtl.normalPath;
+        }
+        else if (line.substr(0, 6) == "map_d ")
+        {
+          std::istringstream s(line.substr(6));
+          s >> currentMtl.maskPath;
         }
         else if (line.substr(0, 3) == "Ka ")
         {

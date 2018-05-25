@@ -28,9 +28,12 @@ class SponzaScene : public Scene
       glm::mat4 model;
       model = glm::scale(model, glm::vec3(0.05f));
       m_UberShader->setMat4("model", model);
-      m_UberShader->setBool("hasNormalMap", normalsEnabled);
-      m_UberShader->setBool("hasShadows", false);
+      //m_UberShader->setBool("hasNormalMap", normalsEnabled);
 
+      m_UberShader->setBool("hasShadows", false);
+      //m_ShadowMap->ComputeShadowMap(m_LightPos, *sponza);
+
+      //m_ShadowMap->Bind();
       sponza->Draw(*m_UberShader);
 
       skybox->Draw(m_Projection, m_View);

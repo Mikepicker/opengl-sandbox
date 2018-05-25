@@ -74,7 +74,7 @@ class ShadowMap
 
     void Bind()
     {
-      glActiveTexture(GL_TEXTURE2);
+      glActiveTexture(GL_TEXTURE4);
       glBindTexture(GL_TEXTURE_2D, depthMap);
     }
 
