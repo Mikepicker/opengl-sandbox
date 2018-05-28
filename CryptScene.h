@@ -37,7 +37,7 @@ class CryptScene : Scene
       m_Godrays->Unbind();
 
       // 1. Compute Shadow Map
-      m_ShadowMap->ComputeShadowMap(m_LightPos, *crypt);
+      m_ShadowMap->ComputeShadowMap(m_LightPos, *crypt, glm::mat4());
 
       // 2. Render scene as normal using the generated depth/shadow map
       m_ShadowMap->Bind();

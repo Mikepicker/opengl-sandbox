@@ -10,7 +10,7 @@
 
 #include <glad/glad.h>
 
-const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024;
+const unsigned int SHADOW_WIDTH = 800, SHADOW_HEIGHT = 800;
 
 class ShadowMap
 {
@@ -48,7 +48,7 @@ class ShadowMap
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 
-    void ComputeShadowMap(glm::vec3& lightPos, Model& model)
+    void ComputeShadowMap(glm::vec3& lightPos, Model& model, glm::mat4 modelMatrix)
     {
       // Render depth of scene to texture (from light's perspective)
       lightProjection = glm::ortho(-10.0f, 10.0f, -10.0f, 10.0f, near_plane, far_plane);
@@ -58,14 +58,14 @@ class ShadowMap
       // 1. Render scene from light's point of view
       shadowDepthShader->use();
       shadowDepthShader->setMat4("lightSpaceMatrix", lightSpaceMatrix);
-      shadowDepthShader->setMat4("model", glm::mat4());
+      shadowDepthShader->setMat4("model", modelMatrix);
 
       glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
       glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
         glClear(GL_DEPTH_BUFFER_BIT);
-        glCullFace(GL_FRONT); // Avoid Peter-Panning
+        //glCullFace(GL_FRONT); // Avoid Peter-Panning
         model.Draw(*shadowDepthShader);
-        glCullFace(GL_BACK);
+        //glCullFace(GL_BACK);
       glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
       glViewport(0, 0, windowWidth, windowHeight);
@@ -101,7 +101,7 @@ class ShadowMap
     unsigned int quadVAO = 0;
     unsigned int quadVBO;
 
-    float near_plane = 1.0f, far_plane = 150.5f;
+    float near_plane = 1.0f, far_plane = 100.5f;
 
     // Draw shadow fbo quad
     void DrawShadowQuad()

@@ -109,9 +109,9 @@ class Mesh {
       this->indices = indices;
       this->material = material;
 
-      std::cout << "TEX" << material.texPath << std::endl;
+      /*std::cout << "TEX" << material.texPath << std::endl;
       std::cout << "NRM" << material.normalPath << std::endl;
-      std::cout << "MSK" << material.maskPath << std::endl;
+      std::cout << "MSK" << material.maskPath << std::endl;*/
 
       if (!material.texPath.empty())
         diffuseMap = loadTexture(material.texPath.c_str());
@@ -133,7 +133,7 @@ class Mesh {
     }
 
     // Render the mesh
-    void Draw(Shader& shader)
+    void Draw(const Shader& shader)
     {
       // Bind textures
       if (!material.texPath.empty())

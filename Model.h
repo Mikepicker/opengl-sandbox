@@ -21,7 +21,7 @@ class Model
       importer.importOBJ(filename, meshes);
     }
 
-    virtual void Draw(Shader& shader)
+    virtual void Draw(const Shader& shader)
     {
       for (std::vector<Mesh>::iterator it = meshes.begin(); it != meshes.end(); it++)
       {
