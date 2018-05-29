@@ -24,6 +24,8 @@ uniform bool hasNormalMap;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 
+uniform float time;
+
 void main()
 {
   vs_out.FragPos = vec3(model * vec4(aPos, 1.0));
@@ -48,5 +50,8 @@ void main()
     vs_out.Normal = transpose(inverse(mat3(model))) * aNormal;
   }
 
+  float s = (sin(time) + 1) / 2;
+  float c = (cos(time) + 1) / 2;
+  vec3 pos = vec3(aPos.x * s, aPos.y * s, aPos.z);
   gl_Position = projection * view * model * vec4(aPos, 1.0);
 }

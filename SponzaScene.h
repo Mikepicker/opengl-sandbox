@@ -12,6 +12,8 @@ class SponzaScene : public Scene
       : Scene(window, width, height)
     {
       sponza = new Model("res/models/sponza/sponza.obj");
+      model = glm::mat4();
+      model = glm::scale(model, glm::vec3(0.05f));
       //sponza = new Model("res/models/crypt/crypt.obj");
       skybox = new Skybox();
 
@@ -21,56 +23,18 @@ class SponzaScene : public Scene
 
       m_LightPos = glm::vec3(30.0f, 35.0f, 0.0f);
 
-      // Shadow depth shader
-      depthShader = new Shader("res/shaders/shadow/omni.vs", "res/shaders/shadow/omni.fs", "res/shaders/shadow/omni.gs");
-      //depthShader = new Shader("res/shaders/shadow/omni.vs", "res/shaders/shadow/omni.fs");
-
-      // configure depth map FBO
-      // -----------------------
-      glGenFramebuffers(1, &depthMapFBO);
-      // create depth cubemap texture
-      glGenTextures(1, &depthCubemap);
-      glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
-      for (unsigned int i = 0; i < 6; ++i)
-        glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-      glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
-
-      // attach depth texture as FBO's depth buffer
-      glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-      glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, depthCubemap, 0);
-      glDrawBuffer(GL_NONE);
-      glReadBuffer(GL_NONE);
-
-      if(glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-      ComputeShadowMap();
+      m_ShadowMap->ComputeShadowMap(*sponza, model, m_LightPos);
     }
 
     void Draw()
     {
       Scene::Draw();
       //m_LightPos = camera.Position;
-
-      glm::mat4 model;
-      model = glm::scale(model, glm::vec3(scale));
       
-      // 2. render scene as normal
-      // -------------------------
-      glViewport(0, 0, s_WindowWidth, s_WindowHeight);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
       m_UberShader->use();
       // set lighting uniforms
-      m_UberShader->setFloat("far_plane", far_plane);
-      glActiveTexture(GL_TEXTURE4);
-      glBindTexture(GL_TEXTURE_CUBE_MAP, depthCubemap);
+      m_UberShader->setFloat("far_plane", m_ShadowMap->far_plane);
+      m_ShadowMap->Bind();
 
       if (!debugShadows)
       {
@@ -78,6 +42,7 @@ class SponzaScene : public Scene
         m_UberShader->setMat4("model", model);
         m_UberShader->setBool("hasShadows", shadowsEnabled);
         m_UberShader->setFloat("bias", bias);
+        m_UberShader->setFloat("time", glfwGetTime());
 
         sponza->Draw(*m_UberShader);
         skybox->Draw(m_Projection, m_View);
@@ -92,14 +57,9 @@ class SponzaScene : public Scene
     ShaderParams shaderParams;
     bool shadowsEnabled = true;
     bool debugShadows = false;
-    float scale = 0.05f;
+    glm::mat4 model;
 
     // Shadow map
-    Shader* depthShader;
-    unsigned int depthMapFBO;
-    unsigned int depthCubemap;
-    float near_plane = 1.0f;
-    float far_plane = 100.0f;
     float bias = 0.05;
 
     // Imgui
@@ -133,7 +93,7 @@ class SponzaScene : public Scene
       if (ImGui::Button("Set Light Here"))
       {
         m_LightPos = camera.Position;
-        ComputeShadowMap();
+        m_ShadowMap->ComputeShadowMap(*sponza, model, m_LightPos);
       }
 
       ImGui::Text("Light Pos = %.3f %.3f %.3f", m_LightPos.x, m_LightPos.y, m_LightPos.z);
@@ -146,40 +106,6 @@ class SponzaScene : public Scene
 
       ImGui::Render();
       ImGui_ImplGlfwGL3_RenderDrawData(ImGui::GetDrawData());
-    }
-
-    void ComputeShadowMap()
-    {
-      glClearColor(0.1f, 0.1f, 0.1f, 1.0f);
-      glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-      glm::mat4 model;
-      model = glm::scale(model, glm::vec3(scale));
-
-      // 0. create depth cubemap transformation matrices
-      // -----------------------------------------------
-      glm::mat4 shadowProj = glm::perspective(glm::radians(90.0f), (float)SHADOW_WIDTH / (float)SHADOW_HEIGHT, near_plane, far_plane);
-      std::vector<glm::mat4> shadowTransforms;
-      shadowTransforms.push_back(shadowProj * glm::lookAt(m_LightPos, m_LightPos + glm::vec3(1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-      shadowTransforms.push_back(shadowProj * glm::lookAt(m_LightPos, m_LightPos + glm::vec3(-1.0f, 0.0f, 0.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-      shadowTransforms.push_back(shadowProj * glm::lookAt(m_LightPos, m_LightPos + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f)));
-      shadowTransforms.push_back(shadowProj * glm::lookAt(m_LightPos, m_LightPos + glm::vec3(0.0f, -1.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f)));
-      shadowTransforms.push_back(shadowProj * glm::lookAt(m_LightPos, m_LightPos + glm::vec3(0.0f, 0.0f, 1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-      shadowTransforms.push_back(shadowProj * glm::lookAt(m_LightPos, m_LightPos + glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, -1.0f, 0.0f)));
-
-      // 1. render scene to depth cubemap
-      // --------------------------------
-      glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
-      glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-      glClear(GL_DEPTH_BUFFER_BIT);
-      depthShader->use();
-      for (unsigned int i = 0; i < 6; ++i)
-        depthShader->setMat4("shadowMatrices[" + std::to_string(i) + "]", shadowTransforms[i]);
-      depthShader->setMat4("model", model);
-      depthShader->setFloat("far_plane", far_plane);
-      depthShader->setVec3("lightPos", m_LightPos);
-      sponza->Draw(*depthShader);
-      glBindFramebuffer(GL_FRAMEBUFFER, 0);
     }
 };
 
